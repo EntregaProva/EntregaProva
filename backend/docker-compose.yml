@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: entregaprova-api
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - GCP_PROJECT_ID=entregaprova-dev
+      - FIREBASE_AUTH_EMULATOR_HOST=firebase-emulators:9099
+      - FIRESTORE_EMULATOR_HOST=firebase-emulators:8080
+      - FIREBASE_STORAGE_EMULATOR_HOST=firebase-emulators:9199
+    depends_on:
+      - firebase-emulators
+
+  firebase-emulators:
+    image: spine3/firebase-emulator:latest
+    container_name: entregaprova-emulators
+    ports:
+      - "4000:4000" # UI do Firebase Emulator
+      - "8080:8080" # Firestore Emulator
+      - "9099:9099" # Auth Emulator
+      - "9199:9199" # Storage Emulator
+    volumes:
+      - ./firebase.json:/firebase.json
+    environment:
+      - GCP_PROJECT=entregaprova-dev
