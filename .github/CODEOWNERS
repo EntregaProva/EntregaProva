@@ -1,0 +1,5 @@
+# Autorizados a revisar alterações em todo o repositório
+* @mahluoliveira @jppellearch
+
+# Quem pode revisar alterações no CODEOWNERS
+/.github/CODEOWNERS @mahluoliveira @jppellearch
