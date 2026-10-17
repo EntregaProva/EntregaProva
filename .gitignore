@@ -1,0 +1,26 @@
+# Segredos (NUNCA commitar)
+.env
+.env.*
+!.env.example
+*serviceaccount*.json
+*-key.json
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+
+# Firebase / emuladores
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+emulator-data/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
