@@ -1,12 +1,12 @@
 import * as admin from "firebase-admin";
 
-const projectId = process.env.GCP_PROJECT_ID || "entregaprova-dev";
+const projectId = process.env.GCP_PROJECT_ID || "demo-entregaprova";
 
 // Inicializa o Firebase Admin apontando para o projeto local
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: projectId,
-    storageBucket: process.env.STORAGE_BUCKET_NAME || `${projectId}.appspot.com`,
+    storageBucket: process.env.STORAGE_BUCKET || `${projectId}.appspot.com`,
   });
 }
 
