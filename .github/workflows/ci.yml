@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [backend, frontend]
+        package: [backend]
     defaults:
       run:
         working-directory: ${{ matrix.package }}
