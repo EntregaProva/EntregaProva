@@ -1,0 +1,8 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 5173
+# --host 0.0.0.0 e obrigatorio para o Vite ser acessivel de fora do container
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
