@@ -1,0 +1,2 @@
+# Evita problemas de CRLF no Windows dentro dos containers
+* text=auto eol=lf
