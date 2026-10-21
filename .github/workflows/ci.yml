@@ -35,4 +35,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
-      - run: docker compose config -q
+      - run: docker compose -f docker/docker-compose.yml config -q

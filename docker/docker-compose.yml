@@ -1,16 +1,16 @@
 services:
   emulators:
-    build: ./infra/emulators
+    build: ./emulators
     ports:
       - "127.0.0.1:4000:4000"   # UI dos emuladores
       - "127.0.0.1:8080:8080"   # Firestore
       - "127.0.0.1:9099:9099"   # Auth
       - "127.0.0.1:9199:9199"   # Storage
     volumes:
-      - ./firebase.json:/workspace/firebase.json:ro
-      - ./.firebaserc:/workspace/.firebaserc:ro
-      - ./firestore.rules:/workspace/firestore.rules:ro
-      - ./storage.rules:/workspace/storage.rules:ro
+      - ../firebase.json:/workspace/firebase.json:ro
+      - ../.firebaserc:/workspace/.firebaserc:ro
+      - ../firestore.rules:/workspace/firestore.rules:ro
+      - ../storage.rules:/workspace/storage.rules:ro
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9099/"]
       interval: 5s
@@ -20,10 +20,10 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile.dev
     env_file:
-      - .env
+      - ../.env
     environment:
       # Dentro do Docker, "localhost" e o proprio container: usar o nome do servico
       FIRESTORE_EMULATOR_HOST: emulators:8080
@@ -33,7 +33,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - ./backend:/app
+      - ../backend:/app
       - /app/node_modules
     depends_on:
       emulators:
@@ -41,16 +41,16 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: ../frontend
+      dockerfile: ../docker/frontend/Dockerfile.dev
     env_file:
-      - .env
+      - ../.env
     environment:
       CHOKIDAR_USEPOLLING: "true"
     ports:
       - "127.0.0.1:5173:5173"
     volumes:
-      - ./frontend:/app
+      - ../frontend:/app
       - /app/node_modules
     depends_on:
       - backend

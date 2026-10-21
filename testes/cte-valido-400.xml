@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CTe xmlns="http://www.portalfiscal.inf.br/cte">
+  <infCte Id="CTe35260100000000000353570010000000011000000019" versao="4.00">
+    <ide>
+      <cUF>35</cUF>
+      <cCT>00000001</cCT>
+      <CFOP>5353</CFOP>
+      <natOp>PRESTACAO DE SERVICO DE TRANSPORTE</natOp>
+      <mod>57</mod>
+      <serie>1</serie>
+      <nCT>1</nCT>
+      <dhEmi>2026-10-18T11:00:00-03:00</dhEmi>
+      <tpImp>1</tpImp>
+      <tpEmis>1</tpEmis>
+      <cDV>9</cDV>
+      <tpAmb>2</tpAmb>
+      <tpCTe>0</tpCTe>
+      <procEmi>0</procEmi>
+      <verProc>1.0.0</verProc>
+    </ide>
+    <emit>
+      <CNPJ>00000000000353</CNPJ>
+      <xNome>TRANSPORTADORA BETA TESTES LTDA</xNome>
+      <xFant>BETA CARGAS</xFant>
+      <IE>333333333333</IE>
+      <enderEmit>
+        <xLgr>AVENIDA DAS FROTAS</xLgr>
+        <nro>20</nro>
+        <xBairro>TERMINAL DE CARGAS</xBairro>
+        <cMun>3550308</cMun>
+        <xMun>SAO PAULO</xMun>
+        <UF>SP</UF>
+        <CEP>03003000</CEP>
+      </enderEmit>
+    </emit>
+    <rem>
+      <CNPJ>00000000000191</CNPJ>
+      <IE>111111111111</IE>
+      <xNome>EMPRESA MODELO REMETENTE LTDA</xNome>
+    </rem>
+    <dest>
+      <CNPJ>00000000000272</CNPJ>
+      <IE>222222222222</IE>
+      <xNome>DESTINATARIO EXEMPLO SINTETICO SA</xNome>
+    </dest>
+    <vPrest>
+      <vTPrest>150.00</vTPrest>
+      <vRec>150.00</vRec>
+    </vPrest>
+  </infCte>
+</CTe>

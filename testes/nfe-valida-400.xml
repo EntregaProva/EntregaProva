@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+  <infNFe Id="NFe35260100000000000191550010000000011000000010" versao="4.00">
+    <ide>
+      <cUF>35</cUF>
+      <cNF>00000001</cNF>
+      <natOp>VENDA DE MERCADORIAS</natOp>
+      <mod>55</mod>
+      <serie>1</serie>
+      <nNF>1</nNF>
+      <dhEmi>2026-10-18T10:00:00-03:00</dhEmi>
+      <tpNF>1</tpNF>
+      <idDest>1</idDest>
+      <cMunFG>3550308</cMunFG>
+      <tpImp>1</tpImp>
+      <tpEmis>1</tpEmis>
+      <cDV>0</cDV>
+      <tpAmb>2</tpAmb>
+      <finNFe>1</finNFe>
+      <indFinal>0</indFinal>
+      <indPres>1</indPres>
+      <procEmi>0</procEmi>
+      <verProc>1.0.0</verProc>
+    </ide>
+    <emit>
+      <CNPJ>00000000000191</CNPJ>
+      <xNome>EMPRESA MODELO REMETENTE LTDA</xNome>
+      <enderEmit>
+        <xLgr>RUA FICTICIA DE TESTES</xLgr>
+        <nro>100</nro>
+        <xBairro>DISTRITO INDUSTRIAL</xBairro>
+        <cMun>3550308</cMun>
+        <xMun>SAO PAULO</xMun>
+        <UF>SP</UF>
+        <CEP>01001000</CEP>
+      </enderEmit>
+      <IE>111111111111</IE>
+      <CRT>3</CRT>
+    </emit>
+    <dest>
+      <CNPJ>00000000000272</CNPJ>
+      <xNome>DESTINATARIO EXEMPLO SINTETICO SA</xNome>
+      <enderDest>
+        <xLgr>AVENIDA PADRAO DE CARGA</xLgr>
+        <nro>500</nro>
+        <xBairro>LOGISTICA NORTE</xBairro>
+        <cMun>3550308</cMun>
+        <xMun>SAO PAULO</xMun>
+        <UF>SP</UF>
+        <CEP>02002000</CEP>
+      </enderDest>
+      <indIEDest>1</indIEDest>
+      <IE>222222222222</IE>
+    </dest>
+    <total>
+      <ICMSTot>
+        <vBC>1000.00</vBC>
+        <vICMS>180.00</vICMS>
+        <vProd>1000.00</vProd>
+        <vNF>1000.00</vNF>
+      </ICMSTot>
+    </total>
+    <transp>
+      <modFrete>0</modFrete>
+      <transporta>
+        <CNPJ>00000000000353</CNPJ>
+        <xNome>TRANSPORTADORA BETA TESTES LTDA</xNome>
+      </transporta>
+    </transp>
+  </infNFe>
+</NFe>
