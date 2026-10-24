@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EntregaProva | Painel de entregas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#" aria-label="EntregaProva - início">
+      <img src="logo-entregaprova.png" alt="EntregaProva" class="brand-logo">
+    </a>
+    <div class="nav-label">MENU PRINCIPAL</div>
+    <nav>
+      <a class="nav-item active" href="#"><span>▦</span> Visão geral</a>
+      <a class="nav-item" href="#entregas"><span>▣</span> Entregas</a>
+      <a class="nav-item" href="#comprovantes"><span>✓</span> Comprovantes</a>
+      <a class="nav-item" href="#relatorios"><span>▤</span> Relatórios</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="help-card">
+        <div class="help-icon">?</div>
+        <strong>Precisa de ajuda?</strong>
+        <p>Estamos aqui para ajudar você.</p>
+        <button class="button secondary small" id="helpBtn">Falar com suporte</button>
+      </div>
+      <div class="profile">
+        <div class="avatar">TR</div>
+        <div><strong>Transportes Rápidos</strong><small>Plano profissional</small></div>
+        <span class="dots">•••</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="mobile-brand"><img src="logo-entregaprova.png" alt="EntregaProva" class="mobile-logo"></div>
+      <div class="breadcrumb">Painel <span>/</span> Visão geral</div>
+      <div class="top-actions">
+        <button class="icon-button" aria-label="Notificações" title="Notificações" id="notificationBtn">♧<i></i></button>
+        <div class="top-avatar">TR</div>
+      </div>
+    </header>
+
+    <section class="welcome">
+      <div>
+        <p class="eyebrow">DIA DA SEMANA, DIA DO MÊS</p>
+        <h1>Seja bem-vindo!</h1>
+        <p class="muted">Aqui está um resumo da operação da sua transportadora.</p>
+      </div>
+      <button class="button primary" id="newDeliveryBtn"><span>＋</span> Registrar entrega</button>
+    </section>
+
+    <section class="stats-grid" aria-label="Indicadores">
+      <article class="stat-card">
+        <div class="stat-top"><span class="stat-icon blue-bg">▣</span><span class="trend positive">↗ 12,8%</span></div>
+        <p class="stat-label">Entregas no período</p><div class="stat-value">1.284</div><p class="stat-foot">Em relação ao mês passado</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top"><span class="stat-icon green-bg">✓</span><span class="trend positive">↗ 8,4%</span></div>
+        <p class="stat-label">Comprovadas</p><div class="stat-value">1.126</div><p class="stat-foot">87,7% das entregas</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top"><span class="stat-icon yellow-bg">◷</span><span class="trend neutral">Atenção</span></div>
+        <p class="stat-label">Aguardando comprovante</p><div class="stat-value" id="pendingCount">128</div><p class="stat-foot">Precisam de acompanhamento</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top"><span class="stat-icon red-bg">!</span><span class="trend danger">Prioridade</span></div>
+        <p class="stat-label">Com pendências</p><div class="stat-value">30</div><p class="stat-foot">Documentos para revisar</p>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel chart-panel">
+        <div class="panel-heading"><div><h2>Visão das comprovações</h2><p class="muted">Acompanhamento dos últimos 7 dias</p></div><button class="select-like" id="periodBtn">Últimos 7 dias⌄</button></div>
+        <div class="chart-legend"><span><i class="legend-blue"></i>Comprovadas</span><span><i class="legend-light"></i>Pendentes</span></div>
+        <div class="chart" aria-label="Gráfico demonstrativo de comprovações">
+          <div class="y-labels"><span>200</span><span>150</span><span>100</span><span>50</span><span>0</span></div>
+          <div class="chart-area">
+            <div class="gridline g1"></div><div class="gridline g2"></div><div class="gridline g3"></div><div class="gridline g4"></div>
+            <div class="bars">
+              <div class="bar-group"><div class="bar blue-bar" style="height:66%"></div><div class="bar pale-bar" style="height:22%"></div><small>Seg</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:82%"></div><div class="bar pale-bar" style="height:17%"></div><small>Ter</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:72%"></div><div class="bar pale-bar" style="height:26%"></div><small>Qua</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:92%"></div><div class="bar pale-bar" style="height:15%"></div><small>Qui</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:78%"></div><div class="bar pale-bar" style="height:28%"></div><small>Sex</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:56%"></div><div class="bar pale-bar" style="height:19%"></div><small>Sáb</small></div>
+              <div class="bar-group"><div class="bar blue-bar" style="height:45%"></div><div class="bar pale-bar" style="height:12%"></div><small>Dom</small></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel action-panel">
+        <div class="panel-heading"><div><h2>Acesso rápido</h2><p class="muted">O que você precisa fazer?</p></div></div>
+        <button class="quick-action" id="uploadBtn"><span class="quick-icon">↑</span><span><strong>Enviar comprovante</strong><small>Adicione uma foto ou arquivo</small></span><b>›</b></button>
+        <button class="quick-action" id="reviewBtn"><span class="quick-icon amber">✓</span><span><strong>Revisar pendências</strong><small>Confira documentos divergentes</small></span><b>›</b></button>
+        <button class="quick-action" id="reportBtn"><span class="quick-icon violet">▤</span><span><strong>Gerar pacote de faturamento</strong><small>Reúna os comprovantes validados</small></span><b>›</b></button>
+        <div class="tip"><span>✦</span><p><strong>Dica da EntregaProva</strong><br>Comprovantes organizados ajudam a agilizar o faturamento.</p></div>
+      </article>
+    </section>
+
+    <section class="panel deliveries-panel" id="entregas">
+      <div class="panel-heading deliveries-heading">
+        <div><h2>Entregas recentes</h2><p class="muted">Acompanhe os comprovantes da sua operação.</p></div>
+        <div class="table-actions"><input type="search" id="searchInput" placeholder="Buscar entrega..." aria-label="Buscar entrega"><button class="button secondary" id="exportBtn">↓ Exportar</button></div>
+      </div>
+      <div class="table-wrap"><table id="deliveryTable">
+        <thead><tr><th>ENTREGA / NOTA FISCAL</th><th>DESTINATÁRIO</th><th>DATA</th><th>STATUS</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><strong>#EP-1048</strong><small>NF-e 35291</small></td><td>Mercado Central</td><td>15 out, 14:32</td><td><span class="status success"><i></i>Comprovada</span></td><td><button class="more-btn" aria-label="Detalhes da entrega EP-1048">•••</button></td></tr>
+          <tr><td><strong>#EP-1047</strong><small>NF-e 35290</small></td><td>Distribuidora Horizonte</td><td>15 out, 13:18</td><td><span class="status warning"><i></i>Aguardando</span></td><td><button class="more-btn" aria-label="Detalhes da entrega EP-1047">•••</button></td></tr>
+          <tr><td><strong>#EP-1046</strong><small>NF-e 35289</small></td><td>Supermercado Bom Dia</td><td>15 out, 11:45</td><td><span class="status danger-status"><i></i>Pendência</span></td><td><button class="more-btn" aria-label="Detalhes da entrega EP-1046">•••</button></td></tr>
+          <tr><td><strong>#EP-1045</strong><small>NF-e 35288</small></td><td>Armazém do Vale</td><td>14 out, 17:06</td><td><span class="status success"><i></i>Comprovada</span></td><td><button class="more-btn" aria-label="Detalhes da entrega EP-1045">•••</button></td></tr>
+          <tr><td><strong>#EP-1044</strong><small>NF-e 35287</small></td><td>Comercial São Lucas</td><td>14 out, 15:51</td><td><span class="status warning"><i></i>Aguardando</span></td><td><button class="more-btn" aria-label="Detalhes da entrega EP-1044">•••</button></td></tr>
+        </tbody>
+      </table></div>
+      <div class="table-footer"><span id="resultCount">Mostrando 5 entregas recentes</span><a href="#entregas" id="viewAllBtn">Ver todas as entregas <span>→</span></a></div>
+    </section>
+    <footer>© 2026 EntregaProva · Da entrega à comprovação, sem perder o controle.</footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="deliveryDialog">
+    <form method="dialog" id="deliveryForm">
+      <div class="dialog-head"><div><p class="eyebrow">NOVA OPERAÇÃO</p><h2>Registrar entrega</h2></div><button class="close-btn" aria-label="Fechar">×</button></div>
+      <label for="recipient">Destinatário</label><input id="recipient" required placeholder="Ex.: Mercado Central">
+      <label for="invoice">Número da NF-e / CT-e</label><input id="invoice" required placeholder="Ex.: 35292">
+      <label for="deliveryDate">Data da entrega</label><input id="deliveryDate" type="date" required>
+      <button class="button primary full" type="submit">Salvar entrega</button>
+    </form>
+  </dialog>
+  <input type="file" id="fileInput" accept="image/*,.pdf" hidden>
+  <script src="script.js"></script>
+</body>
+</html>
