@@ -12,7 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [backend]
+        include:
+          - package: backend
+            node: 20
+          - package: entregaprova-app
+            node: 22
     defaults:
       run:
         working-directory: ${{ matrix.package }}
@@ -21,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: ${{ matrix.package }}/package-lock.json
 
@@ -29,10 +33,10 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
-  compose-config:
-    name: docker-compose valido
+  compose-build:
+    name: docker compose build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
-      - run: docker compose -f docker/docker-compose.yml config -q
+      - run: docker compose build
