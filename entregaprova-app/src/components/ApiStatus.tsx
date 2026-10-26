@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 type Status = "carregando" | "ok" | "erro";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 const TEXTO: Record<Status, string> = {
   carregando: "Verificando API...",
@@ -15,7 +15,7 @@ export default function ApiStatus() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${API_URL}/health`, { signal: controller.signal })
+    fetch(`${API_URL}/api/v1/health`, { signal: controller.signal })
       .then((res) => setStatus(res.ok ? "ok" : "erro"))
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
