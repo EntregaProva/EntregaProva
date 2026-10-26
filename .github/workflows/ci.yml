@@ -28,7 +28,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+<<<<<<< HEAD
       - run: npm test
+=======
+>>>>>>> 0508b815fbc973c4f36a5f9fe60ff32200af9a55
 
   compose-config:
     name: docker-compose valido
