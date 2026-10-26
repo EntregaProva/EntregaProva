@@ -1,7 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // deny-all (placeholder). Regras reais e testes de autorizacao entram na Semana 4.
     match /{document=**} {
       allow read, write: if false;
     }
