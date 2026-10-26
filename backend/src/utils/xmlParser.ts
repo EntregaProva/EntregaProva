@@ -22,7 +22,8 @@ export function parseNFeXML(xmlContent: string) {
     const destinatario = nfe.dest?.xNome || "";
 
     return { chave, numero, valorTotal: Number(valorTotal), destinatario };
-  } catch (err: any) {
-    throw new Error(`XML malformado ou inválido: ${err.message}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`XML malformado ou inválido: ${message}`);
   }
 }

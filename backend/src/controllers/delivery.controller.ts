@@ -34,8 +34,9 @@ export const importXML = async (req: Request, res: Response) => {
     const docRef = await db.collection("deliveries").add(deliveryDoc);
 
     return res.status(201).json({ id: docRef.id, ...deliveryDoc });
-  } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return res.status(400).json({ error: message });
   }
 };
 
@@ -89,8 +90,9 @@ export const submitProof = async (req: Request, res: Response) => {
     await docRef.update(updatePayload);
 
     return res.status(200).json({ message: "Comprovante registrado com sucesso", ...updatePayload });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return res.status(500).json({ error: message });
   }
 };
 
@@ -125,7 +127,8 @@ export const checkProof = async (req: Request, res: Response) => {
     await docRef.update(updatePayload);
 
     return res.status(200).json({ id, ...updatePayload });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return res.status(500).json({ error: message });
   }
 };

@@ -1,5 +1,4 @@
 import { Router } from "express";
-<<<<<<< HEAD
 import { getHealth } from "../controllers/health.controller";
 import { authenticateToken, requireRole } from "../middlewares/auth.middleware";
 import { importXML, submitProof, checkProof } from "../controllers/delivery.controller";
@@ -8,6 +7,7 @@ import { uploadProof } from "../config/multer";
 const routes = Router();
 
 // Rotas públicas de diagnóstico operacional
+routes.get("/health", getHealth);
 routes.get("/healthz", getHealth);
 routes.get("/readyz", getHealth);
 
@@ -24,12 +24,3 @@ routes.post("/deliveries/:id/proof", requireRole(["driver", "admin"]), uploadPro
 routes.patch("/deliveries/:id/check", requireRole(["admin", "operator"]), checkProof);
 
 export default routes;
-=======
-import { getHealth } from "../controllers/health.controller.js";
-
-const routes = Router();
-
-routes.get("/health", getHealth);
-
-export default routes;
->>>>>>> 0508b815fbc973c4f36a5f9fe60ff32200af9a55
