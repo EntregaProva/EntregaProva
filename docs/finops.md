@@ -24,8 +24,8 @@ Feita em 25/10/2026, na calculadora oficial do Google Cloud, sem conta de fatura
 | Serviço | Uso estimado | Custo mensal |
 |---|---|---|
 | Cloud Run | 50.000 requisições por mês, tráfego com pico diário, cobrança só durante requisições, instâncias mínimas = 0 | US$ 0,71 |
-| Firestore | 5.000 leituras, 500 escritas e 50 exclusões por dia, 1 GiB armazenado | US$ X,XX |
-| Cloud Storage | 5 GiB armazenados, 10.000 operações de escrita e 50.000 de leitura por mês, 5 GiB de saída de dados | US$ X,XX |
+| Firestore | 5.000 leituras, 500 escritas e 50 exclusões por dia, 1 GiB armazenado | US$ 0,00|
+| Cloud Storage | 5 GiB armazenados, 10.000 operações de escrita e 50.000 de leitura por mês, 5 GiB de saída de dados | US$ 0,18 |
 | 10.58 | | 0,81 |
 
 Esse valor é uma previsão para a fase de nuvem (a partir do Checkpoint 3). Hoje o gasto real continua em US$ 0,00.
