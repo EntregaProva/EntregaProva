@@ -40,25 +40,25 @@ describe.skipIf(!emulator)("Security Rules deny-all (Firestore)", () => {
   const logado = () =>
     env.authenticatedContext("user-1", { tenantId: "tenant-a", role: "operator" }).firestore();
 
-  it("CT-14: Anônimo não lê documento", async () => {
+  it("CT-23: Anônimo não lê documento", async () => {
     await assertFails(getDoc(doc(anonimo(), `${entregas}/d1`)));
   });
 
-  it("CT-15: Anônimo não escreve", async () => {
+  it("CT-24: Anônimo não escreve", async () => {
     await assertFails(setDoc(doc(anonimo(), `${entregas}/d2`), { status: "pendente" }));
   });
 
-  it("CT-16: Autenticado não lê documento nem lista a coleção", async () => {
+  it("CT-25: Autenticado não lê documento nem lista a coleção", async () => {
     await assertFails(getDoc(doc(logado(), `${entregas}/d1`)));
     await assertFails(getDocs(collection(logado(), entregas)));
   });
 
-  it("CT-17: Autenticado não cria nem altera", async () => {
+  it("CT-26: Autenticado não cria nem altera", async () => {
     await assertFails(setDoc(doc(logado(), `${entregas}/d2`), { status: "pendente" }));
     await assertFails(setDoc(doc(logado(), `${entregas}/d1`), { status: "conferida" }));
   });
 
-  it("CT-18: Autenticado não apaga", async () => {
+  it("CT-27: Autenticado não apaga", async () => {
     await assertFails(deleteDoc(doc(logado(), `${entregas}/d1`)));
   });
 });
