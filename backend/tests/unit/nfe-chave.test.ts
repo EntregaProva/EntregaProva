@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validarChaveNfe } from "../validacao-nfe/nfe.test.js";
+import { validarChaveNfe } from "../../src/validacao-nfe/nfe.js";
 
 const CHAVE_VALIDA = "35261000000000000191550010000123451000123450";
 
