@@ -32,6 +32,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm test
+        if: matrix.package == 'backend'
 
   compose-build:
     name: docker compose build
