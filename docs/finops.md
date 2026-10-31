@@ -60,6 +60,19 @@ A decisão formal e a aprovação do professor para as exceções ao Caderno (Re
 - Revisão de leituras e escritas do Firestore.
 - Conferência dos limites gratuitos dos serviços antes do primeiro deploy.
 
+## Conferência dos limites gratuitos (31/10/2026)
+
+Antes do primeiro deploy (Checkpoint 3), os limites gratuitos usados pelo Plano Custo Zero foram conferidos de novo nas páginas oficiais dos serviços. Nenhum limite mudou em relação à conferência de 14/10/2026.
+
+| Serviço | Limite gratuito conferido |
+|---|---|
+| Firebase Hosting (Spark) | 10 GB armazenados e 360 MB de transferência por dia |
+| Firestore (Spark) | 1 GiB armazenado; 50 mil leituras, 20 mil escritas e 20 mil exclusões por dia |
+| Render (web service Free) | 750 horas por mês por workspace; dorme após 15 min sem tráfego e leva cerca de 1 min para acordar; sem disco persistente |
+| UptimeRobot (Free) | 50 monitores, checagem a cada 5 min, alerta por e-mail |
+
+O Firebase Spark e o UptimeRobot declaram não exigir método de pagamento. No Render, a ausência de cartão é comprovada no cadastro, pelo print da conta sem forma de pagamento.
+
 ## Evidências
 
 - Plano Spark do projeto Firebase: `firebase-spark-sem-faturamento-a.png` nesta pasta.
