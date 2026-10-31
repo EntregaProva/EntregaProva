@@ -8,6 +8,30 @@ Atualizado em 25/10/2026.
 - O desenvolvimento roda inteiro nos emuladores locais (Auth, Firestore e Storage) via Docker Compose, sem uso de recursos do Google Cloud.
 - **Gasto acumulado: US$ 0,00** (teto do Checkpoint 2: US$ 5,00; teto do ciclo: US$ 50,00 por equipe).
 
+## Evidência do gasto (Checkpoint 2)
+
+O guia do Checkpoint 2 pede o print do painel de faturamento. Esse painel não existe para a equipe, porque não há projeto real nem conta de faturamento. O gasto de US$ 0,00 é comprovado por:
+
+- O `.firebaserc` com o id `demo-entregaprova`, prefixo usado apenas por projetos de emulador, que não geram cobrança.
+- Todo o ambiente rodando localmente nos emuladores, via Docker Compose.
+
+![Print do .firebaserc com o id demo-entregaprova](print-firebaserc.png)
+
+## Estimativa na calculadora de preços do Google Cloud (fase de nuvem)
+
+Feita em 25/10/2026, na calculadora oficial do Google Cloud, sem conta de faturamento. Região: São Paulo (southamerica-east1). Os valores de uso são estimativas para uma demo pequena, com cerca de 20 usuários.
+
+| Serviço | Uso estimado | Custo mensal |
+|---|---|---|
+| Cloud Run | 50.000 requisições por mês, tráfego com pico diário, cobrança só durante requisições, instâncias mínimas = 0 | US$ 0,71 |
+| Firestore | 5.000 leituras, 500 escritas e 50 exclusões por dia, 1 GiB armazenado | US$ 0,00|
+| Cloud Storage | 5 GiB armazenados, 10.000 operações de escrita e 50.000 de leitura por mês, 5 GiB de saída de dados | US$ 0,18 |
+| 10.58 | | 0,81 |
+
+Esse valor é uma previsão para a fase de nuvem (a partir do Checkpoint 3). Hoje o gasto real continua em US$ 0,00.
+
+![Estimativa na calculadora de preços do Google Cloud](estimativa-calculadora.png)
+
 ## Pendência: alertas de orçamento (50/80/100%)
 
 Os alertas de orçamento exigem um projeto real com conta de faturamento (plano Blaze), e o Blaze exige o cadastro de um cartão de crédito. Como a equipe ainda não decidiu quem cadastrará o cartão, o projeto real não foi criado e o alerta **não foi criado**. Isso é uma decisão consciente, não um esquecimento.
@@ -29,4 +53,5 @@ Prazo: antes do Checkpoint 3 (15/11), que exige Cloud Run e, portanto, faturamen
 
 ## Evidências
 
-- `.firebaserc` com o id `demo-entregaprova` (print a incluir nesta pasta).
+- `.firebaserc` com o id `demo-entregaprova`: ver `print-firebaserc.png` nesta pasta.
+- Estimativa da calculadora de preços: ver `estimativa-calculadora.png` nesta pasta.

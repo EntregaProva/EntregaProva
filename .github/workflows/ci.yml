@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   lint-and-build:
     name: ${{ matrix.package }} (lint + build)
@@ -14,7 +17,7 @@ jobs:
       matrix:
         include:
           - package: backend
-            node: 20
+            node: 22
           - package: entregaprova-app
             node: 22
     defaults:
@@ -32,6 +35,58 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+  # DESATIVADO ate os testes do backend passarem (ver Bug Report no relatorio).
+  # Para reativar: remova o "# " do inicio de cada linha deste bloco.
+  # backend-test:
+  #   name: backend (test)
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: backend
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #         cache-dependency-path: backend/package-lock.json
+
+  #     - run: npm ci
+  #     - run: npm test
+
+  npm-audit:
+    name: ${{ matrix.package }} (npm audit)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [backend, entregaprova-app]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm audit --omit=dev --audit-level=high
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Procurar segredos no repositorio
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --redact --verbose
 
   compose-build:
     name: docker compose build
