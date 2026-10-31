@@ -1,33 +1,26 @@
-interface Stat {
-  icon: string;
-  iconClass: string;
-  trend: string;
-  trendClass: string;
-  label: string;
-  value: string;
-  foot: string;
-}
+import type { Delivery } from "../api/deliveries.ts";
 
-// Números de demonstração. Virão da API quando ela existir.
-const STATS: Stat[] = [
-  { icon: "▣", iconClass: "blue-bg", trend: "↗ 12,8%", trendClass: "positive", label: "Entregas no período", value: "1.284", foot: "Em relação ao mês passado" },
-  { icon: "✓", iconClass: "green-bg", trend: "↗ 8,4%", trendClass: "positive", label: "Comprovadas", value: "1.126", foot: "87,7% das entregas" },
-  { icon: "◷", iconClass: "yellow-bg", trend: "Atenção", trendClass: "neutral", label: "Aguardando comprovante", value: "128", foot: "Precisam de acompanhamento" },
-  { icon: "!", iconClass: "red-bg", trend: "Prioridade", trendClass: "danger", label: "Com pendências", value: "30", foot: "Documentos para revisar" },
-];
+// Números calculados a partir das entregas REAIS que vieram da API.
+export default function StatsGrid({ deliveries }: { deliveries: Delivery[] }) {
+  const contar = (...status: string[]) => deliveries.filter((d) => status.includes(d.status)).length;
 
-export default function StatsGrid() {
+  const cards = [
+    { icon: "▣", cor: "blue-bg", label: "Total de entregas", valor: deliveries.length, nota: "Importadas até agora" },
+    { icon: "✓", cor: "green-bg", label: "Conferidas", valor: contar("conferida"), nota: "Comprovante validado" },
+    { icon: "◷", cor: "yellow-bg", label: "Aguardando", valor: contar("pendente", "capturada"), nota: "Precisam de acompanhamento" },
+    { icon: "!", cor: "red-bg", label: "Diferentes", valor: contar("diferente"), nota: "Documentos para revisar" },
+  ];
+
   return (
     <section className="stats-grid" aria-label="Indicadores">
-      {STATS.map((s) => (
-        <article className="stat-card" key={s.label}>
+      {cards.map((c) => (
+        <article className="stat-card" key={c.label}>
           <div className="stat-top">
-            <span className={`stat-icon ${s.iconClass}`}>{s.icon}</span>
-            <span className={`trend ${s.trendClass}`}>{s.trend}</span>
+            <span className={`stat-icon ${c.cor}`} aria-hidden="true">{c.icon}</span>
           </div>
-          <p className="stat-label">{s.label}</p>
-          <div className="stat-value">{s.value}</div>
-          <p className="stat-foot">{s.foot}</p>
+          <p className="stat-label">{c.label}</p>
+          <div className="stat-value">{c.valor}</div>
+          <p className="stat-foot">{c.nota}</p>
         </article>
       ))}
     </section>

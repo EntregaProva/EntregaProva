@@ -20,7 +20,7 @@ export const STATUS_CLASS: Record<DeliveryStatus, string> = {
   pendencia: "danger-status",
 };
 
-// Dados de demonstração. Serão trocados pelos dados reais vindos da API.
+// Dados de demonstração
 export const INITIAL_DELIVERIES: Delivery[] = [
   { id: "EP-1048", invoice: "35291", recipient: "Mercado Central", date: "15 out, 14:32", status: "comprovada" },
   { id: "EP-1047", invoice: "35290", recipient: "Distribuidora Horizonte", date: "15 out, 13:18", status: "aguardando" },

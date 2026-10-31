@@ -4,10 +4,36 @@
 @media(max-width:850px){.sidebar{width:70px;padding:22px 10px}.brand{padding:0 7px 38px}.brand-logo{width:38px;height:38px;object-fit:cover;object-position:left center}.nav-label,.nav-item:not(.active){display:none}.nav-item{justify-content:center;padding:13px 8px;font-size:0}.nav-item span{font-size:19px}.help-card,.profile>div:not(.avatar),.dots{display:none}.profile{justify-content:center}.main{margin-left:70px;padding:0 18px 20px}.content-grid{grid-template-columns:1fr}.brand-icon{width:36px}.stats-grid{gap:10px}.stat-card{padding:14px}.welcome h1{font-size:22px}}
 @media(max-width:560px){.main{padding:0 12px 15px}.topbar{height:60px;margin-bottom:22px}.breadcrumb{display:none}.mobile-brand{display:block;font-size:18px;font-weight:700;color:var(--navy)}.welcome{align-items:flex-start;flex-direction:column}.welcome .button{width:100%}.welcome h1{font-size:21px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat-card{padding:12px}.stat-value{font-size:24px}.stat-label{font-size:10px;white-space:normal;min-height:30px}.stat-foot{font-size:8px}.stat-top{margin-bottom:12px}.trend{font-size:8px;padding:4px}.panel{padding:15px}.panel-heading{gap:8px}.panel-heading h2{font-size:13px}.select-like{font-size:9px;padding:7px}.chart{height:180px}.deliveries-panel{padding:16px 0 0}.deliveries-heading{padding:0 15px 15px;align-items:flex-start;flex-direction:column}.table-actions{width:100%}.table-actions input{flex:1;min-width:0}.table-actions .button{padding:9px}.table-footer{padding:13px 15px;font-size:9px}.sidebar{width:56px;padding:18px 6px}.main{margin-left:56px}.brand{padding:0 4px 32px}.brand-logo{width:34px;height:34px;object-fit:cover;object-position:left center}.mobile-logo{width:150px}.nav-item{padding:12px 5px}.top-actions{gap:9px}.top-avatar{width:30px;height:30px}}
 
-/* --- Acrescentado no esqueleto React --- */
 .api-status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}
 .api-dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0}
 .api-dot.ok{background:var(--green)}
 .api-dot.erro{background:var(--red)}
 .empty-row{text-align:center;padding:28px 21px;color:var(--muted)}
 @media(max-width:560px){.api-status-text{display:none}}
+
+/* --- Checkpoint 2: login, formulários, estados e alertas --- */
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login-card{width:min(380px,100%);padding:28px}
+.login-logo{display:block;width:150px;max-width:100%;height:auto;margin:0 auto 18px}
+.login-card h1{font-size:22px;color:var(--navy);margin:0 0 6px}
+.login-card label,.form-panel label{display:block;font-size:12px;font-weight:600;margin:16px 0 6px}
+.login-card input,.form-panel input:not([type=file]),.form-panel select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:13px;background:#fff;color:var(--text)}
+.login-card .button.full{width:100%;margin-top:18px}
+.form-panel{max-width:640px}
+.form-panel input[type=file]{width:100%;font:inherit;font-size:13px}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.hint{font-size:11px;color:var(--muted);margin:6px 0 0}
+.proof-preview{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--line);margin-top:12px}
+.alert{padding:12px 14px;border-radius:10px;font-size:12px;margin-top:16px;font-weight:500}
+.alert.error{background:#FEECEC;color:#B42318;border:1px solid #F8C9C9}
+.alert.success{background:#E8F7EE;color:#0F7A3E;border:1px solid #BFE8CF}
+.state-box{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:36px 20px;background:#fff;border:1px dashed var(--line);border-radius:13px;color:var(--muted)}
+.state-box p{margin:0;font-size:13px}
+.state-box.error{color:#B42318;border-color:#F8C9C9;background:#FFF7F7}
+.state-icon{font-size:26px}
+.button:disabled{opacity:.6;cursor:not-allowed}
+
+/* Jornada 3 e acessibilidade: controles claros, teclado e texto legível. */
+.review-panel{max-width:1100px}.review-select-label{display:block;font-size:14px;font-weight:600;margin-bottom:8px}.review-panel select,.review-actions textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font:inherit}.review-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.review-side{min-width:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.review-side h2{margin:0 0 14px;color:var(--navy);font-size:16px}.review-facts{margin:0;display:grid;gap:12px}.review-facts div{min-width:0}.review-facts dt{color:#536174;font-weight:600;font-size:14px}.review-facts dd{margin:3px 0 0;overflow-wrap:anywhere;font-size:14px}.review-photo{display:block;width:100%;max-height:360px;object-fit:contain;background:#F4F7FB;border-radius:9px;margin-bottom:14px}.review-actions{margin-top:18px}.review-actions label{display:block;font-weight:600;margin-bottom:7px}.review-actions label span{font-weight:400;color:#536174}.review-actions textarea{resize:vertical;min-height:84px}.danger-button{background:#B42318;color:#fff}.danger-button:hover{background:#912018}.state-box p,.hint,.alert,.muted{font-size:14px}.button,input,select,textarea{font-size:14px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+@media(max-width:720px){.review-columns{grid-template-columns:1fr}.review-panel{padding:14px}.review-side{padding:14px}}
