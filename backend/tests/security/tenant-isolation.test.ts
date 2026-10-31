@@ -1,116 +1,147 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import {
-  createTestApp,
-  createTenantFixture,
-  createAuthenticatedUser,
+createTestApp,
+createTenantFixture,
+createAuthenticatedUser,
 } from "../../src/app.js";
+type User = Awaited<ReturnType<typeof createAuthenticatedUser>>;
 
 type App = Awaited<ReturnType<typeof createTestApp>>;
-type User = Awaited<ReturnType<typeof createAuthenticatedUser>>;
+type Metodo = "get" | "post";
 
 const BASE = "/api/v1";
 
-describe("Isolamento de tenant e de motorista - entregas", () => {
-  let app: App;
-  let operatorA: User;
-  let operatorB: User;
-  let driver1A: User; 
-  let driver2A: User; 
-  let deliveryB: { id: string };
-  let deliveryOfDriver1: { id: string };
+const rotas = {
+  entrega: (id: string) => `/entregas/${id}`,
+  comprovantes: (id: string) => `/entregas/${id}/comprovantes`,
+  conferencia: (id: string) => `/entregas/${id}/conferencia`,
+};
 
-  const call = (
-    method: "get" | "post",
-    path: string,
-    user?: User,
-    body?: object,
-  ) => {
-    let req = request(app)[method](`${BASE}${path}`);
-    if (user) req = req.set("Authorization", `Bearer ${user.idToken}`);
-    return body ? req.send(body) : req;
-  };
+describe("Autorização e isolamento - entregas", () => {
+let app: App;
+let operadorA: User;
+let operadorB: User;
+let motorista1A: User;
+let motorista2A: User;
+let entregaDoMotorista1: { id: string };
+let entregaB: { id: string };
+
+  const chamar = (metodo: Metodo, caminho: string, usuario?: User) => {
+  const req = request(app)[metodo](`${BASE}${caminho}`);
+  if (usuario) req.set("Authorization", `Bearer ${usuario.idToken}`);
+  return metodo === "post" ? req.send({}) : req;
+};
+
+  const statusDaEntrega = async (id: string, leitor: User) => {
+const res = await chamar("get", rotas.entrega(id), leitor);
+expect(res.status).toBe(200);
+return res.body.status;
+};
 
   beforeEach(async () => {
-    app = await createTestApp({ environment: "test" });
-    await createTenantFixture(app, {
-      tenantA: { id: "tenant-a", name: "Transportadora A" },
-      tenantB: { id: "tenant-b", name: "Transportadora B" },
-    });
+app = await createTestApp({ environment: "test" });
+await createTenantFixture(app, {
+tenantA: { id: "tenant-a", name: "Transportadora A" },
+tenantB: { id: "tenant-b", name: "Transportadora B" },
+});
 
-    operatorA = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "operator" });
-    operatorB = await createAuthenticatedUser(app, { tenantId: "tenant-b", role: "operator" });
-    driver1A = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "driver" });
-    driver2A = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "driver" });
+    operadorA = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "operator" });
+operadorB = await createAuthenticatedUser(app, { tenantId: "tenant-b", role: "operator" });
+motorista1A = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "driver" });
+motorista2A = await createAuthenticatedUser(app, { tenantId: "tenant-a", role: "driver" });
 
-    deliveryOfDriver1 = await app.testing.createDelivery({
-      tenantId: "tenant-a",
-      driverId: driver1A.uid,
-      nfeKey: "11111111111111111111111111111111111111111111",
-      status: "pendente",
-    });
-    deliveryB = await app.testing.createDelivery({
-      tenantId: "tenant-b",
-      nfeKey: "12345678901234567890123456789012345678901234",
-      status: "pendente",
-    });
-  });
+    entregaDoMotorista1 = await app.testing.createDelivery({
+tenantId: "tenant-a",
+driverId: motorista1A.uid,
+nfeKey: "11111111111111111111111111111111111111111111",
+status: "PENDENTE",
+});
+entregaB = await app.testing.createDelivery({
+tenantId: "tenant-b",
+nfeKey: "12345678901234567890123456789012345678901234",
+status: "PENDENTE",
+});
+});
 
-  describe("GET /entregas/{id}", () => {
-    it("401 sem token", async () => {
-      const res = await call("get", `/entregas/${deliveryB.id}`);
-      expect(res.status).toBe(401);
-    });
+  describe("CT-20: sem token ou token vencido → 401", () => {
+it("CT-20.1: GET /entregas/{id} sem token", async () => {
+const res = await chamar("get", rotas.entrega(entregaDoMotorista1.id));
+expect(res.status).toBe(401);
+});
 
-    it("200 para entrega do próprio tenant", async () => {
-      const res = await call("get", `/entregas/${deliveryOfDriver1.id}`, operatorA);
-      expect(res.status).toBe(200);
-    });
+    it("CT-20.2: GET /entregas/{id} com token vencido", async () => {
+const vencido = await createAuthenticatedUser(app, {
+tenantId: "tenant-a",
+role: "operator",
+expired: true,
+});
+const res = await chamar("get", rotas.entrega(entregaDoMotorista1.id), vencido);
+expect(res.status).toBe(401);
+});
 
-    it("bloqueia leitura de entrega de outro tenant", async () => {
-      const res = await call("get", `/entregas/${deliveryB.id}`, operatorA);
-      expect([403, 404]).toContain(res.status);
-    });
+    it("CT-20.3: POST /comprovantes sem token", async () => {
+const res = await chamar("post", rotas.comprovantes(entregaDoMotorista1.id));
+expect(res.status).toBe(401);
+});
 
-    it("403 quando motorista acessa entrega de outro motorista (mesmo tenant)", async () => {
-      const res = await call("get", `/entregas/${deliveryOfDriver1.id}`, driver2A);
-      expect(res.status).toBe(403);
-    });
+    it("CT-20.4: POST /conferencia sem token", async () => {
+const res = await chamar("post", rotas.conferencia(entregaDoMotorista1.id));
+expect(res.status).toBe(401);
+});
+});
 
-    it("200 quando o motorista acessa a própria entrega", async () => {
-      const res = await call("get", `/entregas/${deliveryOfDriver1.id}`, driver1A);
-      expect(res.status).toBe(200);
-    });
-  });
+  describe("CT-21: papel ou dono errado → 403, sem alterar a entrega", () => {
+it("CT-21.1: motorista não lê entrega de outro motorista", async () => {
+const res = await chamar("get", rotas.entrega(entregaDoMotorista1.id), motorista2A);
+expect(res.status).toBe(403);
+});
 
-  describe("POST /entregas/{id}/comprovantes", () => {
-    it("bloqueia envio em entrega de outro tenant e não altera o estado", async () => {
-      const res = await call("post", `/entregas/${deliveryB.id}/comprovantes`, operatorA, {});
-      expect([403, 404]).toContain(res.status);
+    it("CT-21.2: motorista não envia comprovante em entrega de outro motorista", async () => {
+const res = await chamar("post", rotas.comprovantes(entregaDoMotorista1.id), motorista2A);
+expect(res.status).toBe(403);
+expect(await statusDaEntrega(entregaDoMotorista1.id, operadorA)).toBe("PENDENTE");
+});
 
-      const check = await call("get", `/entregas/${deliveryB.id}`, operatorB);
-      expect(check.status).toBe(200);
-      expect(check.body.status).toBe("pendente");
-    });
+    it("CT-21.3: motorista não confere entrega de outro motorista", async () => {
+const res = await chamar("post", rotas.conferencia(entregaDoMotorista1.id), motorista2A);
+expect(res.status).toBe(403);
+expect(await statusDaEntrega(entregaDoMotorista1.id, operadorA)).toBe("PENDENTE");
+});
 
-    it("403 para motorista em entrega de outro motorista", async () => {
-      const res = await call("post", `/entregas/${deliveryOfDriver1.id}/comprovantes`, driver2A, {});
-      expect(res.status).toBe(403);
-    });
-  });
+    it("CT-21.4: motorista não confere nem a própria entrega", async () => {
+const res = await chamar("post", rotas.conferencia(entregaDoMotorista1.id), motorista1A);
+expect(res.status).toBe(403);
+expect(await statusDaEntrega(entregaDoMotorista1.id, operadorA)).toBe("PENDENTE");
+});
+});
 
-  describe("POST /entregas/{id}/conferencia", () => {
-    it("bloqueia conferência em entrega de outro tenant e não altera o estado", async () => {
-      const res = await call("post", `/entregas/${deliveryB.id}/conferencia`, operatorA, {});
-      expect([403, 404]).toContain(res.status);
+  describe("CT-22: outro tenant → 404 (nem revela que a entrega existe)", () => {
+it("CT-22.1: operador não lê entrega de outro tenant", async () => {
+const res = await chamar("get", rotas.entrega(entregaB.id), operadorA);
+expect(res.status).toBe(404);
+});
 
-      const check = await call("get", `/entregas/${deliveryB.id}`, operatorB);
-      expect(check.body.status).toBe("pendente");
-    });
+    it("CT-22.2: operador não envia comprovante em outro tenant e o estado não muda", async () => {
+const res = await chamar("post", rotas.comprovantes(entregaB.id), operadorA);
+expect(res.status).toBe(404);
+expect(await statusDaEntrega(entregaB.id, operadorB)).toBe("PENDENTE");
+});
 
-    it("403 para motorista em entrega de outro motorista", async () => {
-      const res = await call("post", `/entregas/${deliveryOfDriver1.id}/conferencia`, driver2A, {});
-      expect(res.status).toBe(403);
-    });
-  });
+    it("CT-22.3: operador não confere entrega de outro tenant e o estado não muda", async () => {
+const res = await chamar("post", rotas.conferencia(entregaB.id), operadorA);
+expect(res.status).toBe(404);
+expect(await statusDaEntrega(entregaB.id, operadorB)).toBe("PENDENTE");
+});
+
+    it("CT-22.4: operador lê entrega do próprio tenant (controle positivo)", async () => {
+const res = await chamar("get", rotas.entrega(entregaDoMotorista1.id), operadorA);
+expect(res.status).toBe(200);
+});
+
+    it("CT-22.5: motorista lê a própria entrega (controle positivo)", async () => {
+const res = await chamar("get", rotas.entrega(entregaDoMotorista1.id), motorista1A);
+expect(res.status).toBe(200);
+});
+});
 });
