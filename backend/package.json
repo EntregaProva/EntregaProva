@@ -4,6 +4,7 @@
   "description": "Backend API para o projeto EntregaProva",
   "main": "dist/server.js",
   "scripts": {
+    "seed": "tsx src/seed.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
