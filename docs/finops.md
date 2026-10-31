@@ -1,23 +1,34 @@
 # FinOps: situação de custos
 
-Atualizado em 25/10/2026.
+Atualizado em 31/10/2026.
 
 ## Situação atual
 
-- O projeto usa o id `demo-entregaprova` (ver `.firebaserc` no repositório de código). É um projeto de demonstração dos emuladores do Firebase: não existe na nuvem e não tem conta de faturamento vinculada.
+- O desenvolvimento usa o id `demo-entregaprova` (ver `.firebaserc` no repositório de código). É um projeto de demonstração dos emuladores do Firebase: não existe na nuvem e não tem conta de faturamento vinculada.
 - O desenvolvimento roda inteiro nos emuladores locais (Auth, Firestore e Storage) via Docker Compose, sem uso de recursos do Google Cloud.
-- **Gasto acumulado: US$ 0,00** (teto do Checkpoint 2: US$ 5,00; teto do ciclo: US$ 50,00 por equipe).
+- O projeto Firebase real da equipe está no plano gratuito **Spark**, sem conta de faturamento e sem cartão cadastrado (evidência na seção seguinte).
+- **Gasto acumulado: US$ 0,00** (teto do Checkpoint 2: US$ 5,00).
 
-## Evidência do gasto (Checkpoint 2)
+## Evidência do plano Firebase Spark (Checkpoint 2)
 
-O guia do Checkpoint 2 pede o print do painel de faturamento. Esse painel não existe para a equipe, porque não há projeto real nem conta de faturamento. O gasto de US$ 0,00 é comprovado por:
+O guia do Checkpoint 2 pede o print do painel de faturamento. Como o projeto da equipe está no plano Spark, não existe painel de faturamento com gasto a mostrar. A prova de que não há cobrança possível é mostrar que o projeto está no plano gratuito e que nenhuma conta de faturamento está vinculada a ele. Os dois prints abaixo cumprem esse papel.
+
+**Print A: plano do projeto.** Painel do projeto Firebase da equipe, com o plano **Spark (sem custo, US$ 0 por mês)** visível. O plano Spark não permite cobrança: quando um limite diário é atingido, o serviço para até o dia seguinte e nada é cobrado.
+
+![Print A: projeto Firebase no plano Spark](firebase-spark-sem-faturamento-a.png)
+
+**Print B: ausência de faturamento.** Configurações de uso e faturamento do projeto, mostrando o plano Spark e nenhuma conta de faturamento vinculada. Sem conta de faturamento e sem cartão cadastrado, o pior que pode acontecer é um serviço parar, nunca uma cobrança.
+
+![Print B: configurações de uso e faturamento sem conta vinculada](firebase-spark-sem-faturamento-b.png)
+
+Complementam essa evidência:
 
 - O `.firebaserc` com o id `demo-entregaprova`, prefixo usado apenas por projetos de emulador, que não geram cobrança.
-- Todo o ambiente rodando localmente nos emuladores, via Docker Compose.
+- Todo o ambiente de desenvolvimento rodando localmente nos emuladores, via Docker Compose.
 
 ![Print do .firebaserc com o id demo-entregaprova](print-firebaserc.png)
 
-## Estimativa na calculadora de preços do Google Cloud (fase de nuvem)
+## Estimativa na calculadora de preços do Google Cloud (cenário original com GCP)
 
 Feita em 25/10/2026, na calculadora oficial do Google Cloud, sem conta de faturamento. Região: São Paulo (southamerica-east1). Os valores de uso são estimativas para uma demo pequena, com cerca de 20 usuários.
 
@@ -28,30 +39,30 @@ Feita em 25/10/2026, na calculadora oficial do Google Cloud, sem conta de fatura
 | Cloud Storage | 5 GiB armazenados, 10.000 operações de escrita e 50.000 de leitura por mês, 5 GiB de saída de dados | US$ 0,18 |
 | 10.58 | | 0,81 |
 
-Esse valor é uma previsão para a fase de nuvem (a partir do Checkpoint 3). Hoje o gasto real continua em US$ 0,00.
+Essa estimativa foi feita para o cenário com Cloud Run e Cloud Storage. Com o Plano Custo Zero, esses serviços não são usados (a API vai para o Render e os arquivos, se necessários, para o Supabase Storage, ambos em plano gratuito), então o custo previsto é US$ 0,00. A estimativa fica registrada como referência do cenário original.
 
 ![Estimativa na calculadora de preços do Google Cloud](estimativa-calculadora.png)
 
-## Pendência: alertas de orçamento (50/80/100%)
+## Alertas de orçamento (50/80/100%): substituídos no Plano Custo Zero
 
-Os alertas de orçamento exigem um projeto real com conta de faturamento (plano Blaze), e o Blaze exige o cadastro de um cartão de crédito. Como a equipe ainda não decidiu quem cadastrará o cartão, o projeto real não foi criado e o alerta **não foi criado**. Isso é uma decisão consciente, não um esquecimento.
+Os alertas de orçamento exigem um projeto com conta de faturamento (plano Blaze), e o Blaze exige o cadastro de um cartão de crédito. Como a equipe não terá voucher do GCP, ela adota o Plano Custo Zero: nenhum projeto liga conta de faturamento e nenhum cartão é cadastrado em nenhum serviço.
 
-Plano:
+Por isso, **os alertas de orçamento não foram criados, e essa é uma decisão consciente, não um esquecimento**. Sem faturamento não há cobrança possível, e os alertas deixam de ser necessários. No lugar deles, a evidência para o tutor é a prova de que não existe faturamento ligado ao projeto, apresentada nos Prints A e B acima.
 
-1. O grupo define quem cadastra o cartão e como limitar o risco (por exemplo, cartão virtual com limite baixo), com a validação do tutor. Também será perguntado ao tutor se o curso oferece créditos ou uma conta de faturamento para as equipes.
-2. Ao criar o projeto real, criar o orçamento de US$ 50 com alertas em 50%, 80% e 100% (US$ 25, 40 e 50).
-3. Registrar aqui o print do console com os limites.
-
-Prazo: antes do Checkpoint 3 (15/11), que exige Cloud Run e, portanto, faturamento.
+A decisão formal e a aprovação do professor para as exceções ao Caderno (Render no lugar do Cloud Run, Supabase no lugar do Cloud Storage, entre outras) são registradas em ADR pelo Tech Lead.
 
 ## Controles previstos para a fase de nuvem
 
-- `min-instances=0` no Cloud Run.
+- Regra de ouro: nunca cadastrar cartão em nenhum serviço e nunca clicar em Upgrade ou Blaze no Firebase.
+- Testes pesados e carga apenas nos emuladores locais, para não gastar a cota diária do Firestore.
 - Listas paginadas e queries controladas.
 - Sem listeners grandes sem justificativa.
 - Revisão de leituras e escritas do Firestore.
+- Conferência dos limites gratuitos dos serviços antes do primeiro deploy.
 
 ## Evidências
 
-- `.firebaserc` com o id `demo-entregaprova`: ver `print-firebaserc.png` nesta pasta.
-- Estimativa da calculadora de preços: ver `estimativa-calculadora.png` nesta pasta.
+- Plano Spark do projeto Firebase: `firebase-spark-sem-faturamento-a.png` nesta pasta.
+- Ausência de conta de faturamento: `firebase-spark-sem-faturamento-b.png` nesta pasta.
+- `.firebaserc` com o id `demo-entregaprova`: `print-firebaserc.png` nesta pasta.
+- Estimativa da calculadora de preços (cenário original): `estimativa-calculadora.png` nesta pasta.
