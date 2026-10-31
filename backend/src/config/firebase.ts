@@ -6,7 +6,7 @@ const projectId = process.env.GCP_PROJECT_ID || "demo-entregaprova";
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: projectId,
-    storageBucket: process.env.STORAGE_BUCKET || `${projectId}.appspot.com`,
+    storageBucket: process.env.STORAGE_BUCKET || process.env.STORAGE_BUCKET_NAME || `${projectId}.appspot.com`,
   });
 }
 
