@@ -35,6 +35,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm test
+        if: matrix.package == 'backend'
 
   # DESATIVADO ate os testes do backend passarem (ver Bug Report no relatorio).
   # Para reativar: remova o "# " do inicio de cada linha deste bloco.
