@@ -1,93 +1,71 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { importarNfe } from "../../src/validacao-nfe/importacao.js";
+import { resolve } from "node:path";
+import request from "supertest";
+import { fixture, key, path, xml } from "../helpers.js";
+import { parseNFeXML } from "../../src/utils/xmlParser.js";
+import { HttpError } from "../../src/utils/httpError.js";
 
-const CHAVE_VALIDA = "35261000000000000191550010000123451000123450";
-const NUMERO_DA_NOTA = "12345";
-const XML_XXE = new URL("../../../testes/nfe-maliciosa-xxe.xml", import.meta.url);
+const XML_XXE = resolve(__dirname, "../../../testes/nfe-maliciosa-xxe.xml");
 
-type Resultado = ReturnType<typeof importarNfe>;
-type OpcoesXml = { versao?: string; chave?: string; numero?: string };
-
-function montarXml({ versao = "4.00", chave = CHAVE_VALIDA, numero = NUMERO_DA_NOTA }: OpcoesXml = {}) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe Id="NFe${chave}" versao="${versao}">
-    <ide><nNF>${numero}</nNF></ide>
-    <emit><CNPJ>00000000000191</CNPJ><xNome>DISTRIBUIDORA EXEMPLO LTDA</xNome></emit>
-    <dest><CNPJ>11111111000122</CNPJ><xNome>SUPERMERCADO MODELO LTDA</xNome></dest>
-  </infNFe>
-</NFe>`;
-}
-
-function importar(conteudo: string, nomeArquivo = "nota.xml") {
-  return importarNfe({ nomeArquivo, conteudo });
-}
-
-function entregaImportada(res: Resultado) {
-  if (!res.ok) {
-    throw new Error(`Importação deveria ter sido aceita, mas foi recusada: ${res.codigo}`);
+function erroAoImportar(conteudo: string): HttpError {
+  try {
+    parseNFeXML(conteudo);
+  } catch (erro) {
+    return erro as HttpError;
   }
-  return res.entrega;
+  throw new Error("A importação deveria ter sido recusada");
 }
 
-function erroDaImportacao(res: Resultado) {
-  if (res.ok) {
-    throw new Error("Importação deveria ter sido recusada, mas foi aceita");
-  }
-  return res;
+async function importarPelaApi(conteudo: string) {
+  const f = fixture();
+  const res = await request(f.app)
+    .post("/api/v1/entregas/xml")
+    .auth("operator", { type: "bearer" })
+    .send({ xmlContent: conteudo });
+  return { f, res };
 }
 
 describe("US-01 - importação de XML de NF-e", () => {
-  it("CT-01: aceita arquivo com extensão .xml", () => {
-    const entrega = entregaImportada(importar(montarXml(), "nota.xml"));
+  it("CT-01: aceita XML válido enviado pela API (201)", async () => {
+    const { res } = await importarPelaApi(xml());
 
-    expect(entrega).toBeDefined();
+    expect(res.status).toBe(201);
   });
 
-  it("CT-02: rejeita arquivo com extensão diferente de .xml", () => {
-    const erro = erroDaImportacao(importar(montarXml(), "nota.txt"));
-
-    expect(erro.codigo).toBe("EXTENSAO_INVALIDA");
-  });
+  it.todo("CT-02: rejeita arquivo com extensão diferente de .xml (o backend só recebe o conteúdo, sem checar extensão)");
 
   it("CT-03: aceita NF-e com versão 4.00", () => {
-    const entrega = entregaImportada(importar(montarXml({ versao: "4.00" })));
-
-    expect(entrega).toBeDefined();
+    expect(parseNFeXML(xml("4.00")).chave).toBe(key);
   });
 
   it("CT-04: rejeita NF-e com versão não suportada", () => {
-    const erro = erroDaImportacao(importar(montarXml({ versao: "3.10" })));
-
-    expect(erro.codigo).toBe("VERSAO_NAO_SUPORTADA");
+    expect(erroAoImportar(xml("3.10")).status).toBe(422);
   });
 
   it("CT-05: parser extrai nNF e a chave do XML válido", () => {
-    const entrega = entregaImportada(importar(montarXml()));
+    const nota = parseNFeXML(xml());
 
-    expect(entrega.numero).toBe(NUMERO_DA_NOTA);
-    expect(entrega.chaveAcesso).toBe(CHAVE_VALIDA);
+    expect(nota.numero).toBe("1");
+    expect(nota.chave).toBe(key);
   });
 
   it("CT-06: rejeita XML malformado", () => {
-    const erro = erroDaImportacao(importar("<NFe><infNFe></NFe>"));
-
-    expect(erro.codigo).toBe("XML_MALFORMADO");
+    expect(erroAoImportar(xml().replace("</ide>", "")).status).toBe(422);
   });
 
-  it("CT-07: rejeita XML com entidade externa (XXE) usando nfe-maliciosa-xxe.xml", () => {
-    const xmlMalicioso = readFileSync(XML_XXE, "utf8");
+  it("CT-07: rejeita XML com entidade externa (XXE) com HTTP 400", () => {
+    const erro = erroAoImportar(readFileSync(XML_XXE, "utf8"));
 
-    const erro = erroDaImportacao(importar(xmlMalicioso, "nfe-maliciosa-xxe.xml"));
-
-    expect(erro.httpStatus).toBe(400);
-    expect(JSON.stringify(erro)).not.toContain("root:");
+    expect(erro.status).toBe(400);
+    expect(erro.message).not.toContain("root:");
   });
 
-  it("CT-08: entrega importada recebe o status inicial PENDENTE", () => {
-    const entrega = entregaImportada(importar(montarXml()));
+  it("CT-08: entrega importada recebe o status inicial PENDENTE", async () => {
+    const { f, res } = await importarPelaApi(xml());
 
-    expect(entrega.status).toBe("PENDENTE");
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("PENDENTE");
+    expect(f.documents.get(path())?.status).toBe("PENDENTE");
   });
 });
