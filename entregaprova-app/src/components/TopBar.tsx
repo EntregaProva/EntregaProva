@@ -1,30 +1,27 @@
 import ApiStatus from "./ApiStatus.tsx";
+import { useAuth } from "../auth/useAuth.ts";
+import { TITULO, type View } from "../views.ts";
 
-interface TopBarProps {
-  onNotifications: () => void;
-}
+export default function TopBar({ view }: { view: View }) {
+  const { user, signOut } = useAuth();
+  const email = user?.email ?? "";
 
-export default function TopBar({ onNotifications }: TopBarProps) {
   return (
     <header className="topbar">
       <div className="mobile-brand">
         <img src="/logo-entregaprova.png" alt="EntregaProva" className="mobile-logo" />
       </div>
       <div className="breadcrumb">
-        Painel <span>/</span> Visão geral
+        Painel <span>/</span> {TITULO[view]}
       </div>
       <div className="top-actions">
         <ApiStatus />
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Notificações"
-          title="Notificações"
-          onClick={onNotifications}
-        >
-          ♧<i></i>
+        <div className="top-avatar" title={email} aria-hidden="true">
+          {email.slice(0, 2).toUpperCase() || "?"}
+        </div>
+        <button type="button" className="button secondary small" onClick={() => void signOut()}>
+          Sair
         </button>
-        <div className="top-avatar">TR</div>
       </div>
     </header>
   );

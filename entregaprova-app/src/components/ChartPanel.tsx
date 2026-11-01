@@ -4,7 +4,6 @@ interface Bar {
   pending: number; // altura da barra clara (%)
 }
 
-// Dados de demonstração do gráfico.
 const BARS: Bar[] = [
   { day: "Seg", paid: 66, pending: 22 },
   { day: "Ter", paid: 82, pending: 17 },

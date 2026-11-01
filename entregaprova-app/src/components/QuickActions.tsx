@@ -40,9 +40,9 @@ export default function QuickActions({ onUpload, onReview, onReport }: QuickActi
       <div className="tip">
         <span>✦</span>
         <p>
-          <strong>Dica da EntregaProva</strong>
+          <strong>Você sabia?</strong>
           <br />
-          Comprovantes organizados ajudam a agilizar o faturamento.
+          Comprovantes organizados ajudam a agilizar o faturamento. Não perca tempo e começe já a enviar os seus documentos! :D
         </p>
       </div>
     </article>
