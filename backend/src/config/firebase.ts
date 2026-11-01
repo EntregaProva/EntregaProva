@@ -1,12 +1,19 @@
 import * as admin from "firebase-admin";
 
-const projectId = process.env.GCP_PROJECT_ID || "demo-entregaprova";
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+const serviceAccount = serviceAccountJson ? JSON.parse(serviceAccountJson) : undefined;
 
-// Inicializa o Firebase Admin apontando para o projeto local
+const projectId =
+  serviceAccount?.project_id || process.env.GCP_PROJECT_ID || "demo-entregaprova";
+
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: projectId,
-    storageBucket: process.env.STORAGE_BUCKET || process.env.STORAGE_BUCKET_NAME || `${projectId}.appspot.com`,
+    projectId,
+    ...(serviceAccount && { credential: admin.credential.cert(serviceAccount) }),
+    storageBucket:
+      process.env.STORAGE_BUCKET ||
+      process.env.STORAGE_BUCKET_NAME ||
+      `${projectId}.appspot.com`,
   });
 }
 
