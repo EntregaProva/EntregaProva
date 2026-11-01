@@ -39,6 +39,7 @@ A proposta é digitalizar o caminho entre a entrega realizada e sua comprovaçã
 - **Frontend:** Vite (`entregaprova-app`)
 - **Autenticação, banco e arquivos:** Firebase Auth, Firestore e Storage (emuladores locais nesta fase)
 - **Ambiente:** Docker e Docker Compose
+- **Deploy:** Firebase Hosting (frontend) e Render (API), ambos em plano gratuito
 - **Testes e qualidade:** Vitest, ESLint e GitHub Actions (CI)
 
 ## Como subir o projeto
@@ -110,8 +111,7 @@ O arquivo `.env` real nunca vai para o GitHub.
 
 ### Verificação rápida
 
-- `GET http://localhost:3000/healthz` responde 200.
-- `GET http://localhost:3000/readyz` responde 200.
+- `GET http://localhost:3000/` responde 200 com a mensagem "EntregaProva API está ativa!".
 - O login com um usuário de teste abre a tela inicial.
 - A UI dos emuladores (http://localhost:4000) mostra os usuários criados pelo seed.
 
@@ -134,7 +134,7 @@ npm run build
 npm test
 ```
 
-Os testes cobrem autorização, EP/BVA e Security Rules (estes últimos rodam contra o emulador). O CI executa lint, build e testes em Node 22 a cada PR.
+Os testes cobrem autorização, EP/BVA e Security Rules (estes últimos rodam contra o emulador). O CI executa a cada PR: lint e build (Node 22), `npm audit`, gitleaks e `docker compose build`. O job de testes do backend entra no CI quando a suíte estiver estável.
 
 ## Estrutura do repositório
 
@@ -144,16 +144,18 @@ Os testes cobrem autorização, EP/BVA e Security Rules (estes últimos rodam co
 | `entregaprova-app/` | Frontend |
 | `docker/` | Dockerfiles e `docker-compose.yml` (backend, frontend e emuladores) |
 | `compose.yaml` | Ponto de entrada do Compose (inclui `docker/docker-compose.yml`) |
-| `firebase.json` | Configuração dos emuladores |
+| `firebase.json` | Configuração dos emuladores e do Firebase Hosting |
 | `firestore.rules` / `storage.rules` | Security Rules (deny-all: o acesso é só pela API) |
-| `testes/` | Testes de autorização, EP/BVA e Security Rules |
-| `docs/` | Documentação (ADRs, FinOps, rastreabilidade, relatórios de teste) |
-| `.github/` | Workflow de CI, CODEOWNERS e template de PR |
+| `testes/` | Testes de autorização, EP/BVA, Security Rules e carga |
+| `docs/` | Evidências de FinOps: `finops.md` e os prints do plano gratuito e das regras da `main` |
+| `.github/` | Workflows de CI e de deploy no Hosting, CODEOWNERS e template de PR |
 
 ## Documentação
 
-A documentação (ADRs, FinOps, rastreabilidade e relatórios de teste) fica em um repositório separado:
+Os ADRs, a matriz de rastreabilidade e os relatórios de teste ficam em um repositório separado:
 
 https://github.com/EntregaProva/EntregaProva-documentation
+
+As evidências de FinOps ficam na pasta `docs/` deste repositório.
 
 **| EntregaProva — Da entrega à comprovação, com mais controle e eficiência.**

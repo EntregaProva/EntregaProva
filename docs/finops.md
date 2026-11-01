@@ -1,12 +1,13 @@
 # FinOps: situação de custos
 
-Atualizado em 31/10/2026.
+Atualizado em 01/11/2026.
 
 ## Situação atual
 
 - O desenvolvimento usa o id `demo-entregaprova` (ver `.firebaserc` no repositório de código). É um projeto de demonstração dos emuladores do Firebase: não existe na nuvem e não tem conta de faturamento vinculada.
 - O desenvolvimento roda inteiro nos emuladores locais (Auth, Firestore e Storage) via Docker Compose, sem uso de recursos do Google Cloud.
 - O projeto Firebase real da equipe está no plano gratuito **Spark**, sem conta de faturamento e sem cartão cadastrado (evidência na seção seguinte).
+- A API está no ar no Render (plano Free), em `https://entregaprova.onrender.com`. O frontend é publicado no Firebase Hosting (plano Spark) por GitHub Actions: preview a cada PR e produção no merge da `main`.
 - **Gasto acumulado: US$ 0,00** (teto do Checkpoint 2: US$ 5,00).
 
 ## Evidência do plano Firebase Spark (Checkpoint 2)
@@ -27,6 +28,12 @@ Complementam essa evidência:
 - Todo o ambiente de desenvolvimento rodando localmente nos emuladores, via Docker Compose.
 
 ![Print do .firebaserc com o id demo-entregaprova](print-firebaserc.png)
+
+## Proteção da branch main (repositório de código)
+
+A `main` está protegida: nenhuma alteração entra sem pull request aprovado por outra pessoa e com os checks do CI verdes (lint e build do backend e do frontend, `docker compose build`, gitleaks e `npm audit` do backend e do frontend), com a branch atualizada e sem permissão de force push.
+
+![Regra de proteção da main](branch-protection-main-codigo.png)
 
 ## Estimativa na calculadora de preços do Google Cloud (cenário original com GCP)
 
@@ -77,5 +84,6 @@ O Firebase Spark e o UptimeRobot declaram não exigir método de pagamento. No R
 
 - Plano Spark do projeto Firebase: `firebase-spark-sem-faturamento-a.png` nesta pasta.
 - Ausência de conta de faturamento: `firebase-spark-sem-faturamento-b.png` nesta pasta.
+- Proteção da branch `main`: `branch-protection-main-codigo.png` nesta pasta.
 - `.firebaserc` com o id `demo-entregaprova`: `print-firebaserc.png` nesta pasta.
 - Estimativa da calculadora de preços (cenário original): `estimativa-calculadora.png` nesta pasta.
