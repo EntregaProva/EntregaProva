@@ -1,11 +1,42 @@
 {
-  "firestore": { "rules": "firestore.rules" },
-  "storage": { "rules": "storage.rules" },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "emulators": {
-    "auth": { "host": "0.0.0.0", "port": 9099 },
-    "firestore": { "host": "0.0.0.0", "port": 8080 },
-    "storage": { "host": "0.0.0.0", "port": 9199 },
-    "ui": { "enabled": true, "host": "0.0.0.0", "port": 4000 },
+    "auth": {
+      "host": "0.0.0.0",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "0.0.0.0",
+      "port": 8080
+    },
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "host": "0.0.0.0",
+      "port": 4000
+    },
     "singleProjectMode": true
+  },
+  "hosting": {
+    "public": "entregaprova-app/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
