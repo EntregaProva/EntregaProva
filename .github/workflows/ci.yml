@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   lint-and-build:
     name: ${{ matrix.package }} (lint + build)
@@ -12,7 +15,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [backend]
+        include:
+          - package: backend
+            node: 22
+          - package: entregaprova-app
+            node: 22
     defaults:
       run:
         working-directory: ${{ matrix.package }}
@@ -21,18 +28,57 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: ${{ matrix.package }}/package-lock.json
-
+      - uses: actions/setup-java@v4
+        if: matrix.package == 'backend'
+        with:
+          distribution: temurin
+          java-version: 21
+          
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm run test:emulator
+        if: matrix.package == 'backend'
 
-  compose-config:
-    name: docker-compose valido
+  npm-audit:
+    name: ${{ matrix.package }} (npm audit)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [backend, entregaprova-app]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm audit --omit=dev --audit-level=high
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Procurar segredos no repositorio
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --redact --verbose
+
+  compose-build:
+    name: docker compose build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
-      - run: docker compose -f docker/docker-compose.yml config -q
+      - run: docker compose build

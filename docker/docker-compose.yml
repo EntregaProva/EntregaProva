@@ -41,8 +41,8 @@ services:
 
   frontend:
     build:
-      context: ../frontend
-      dockerfile: ../docker/frontend/Dockerfile.dev
+      context: ../entregaprova-app
+      dockerfile: ../docker/entregaprova-app/Dockerfile.dev
     env_file:
       - ../.env
     environment:
@@ -50,7 +50,7 @@ services:
     ports:
       - "127.0.0.1:5173:5173"
     volumes:
-      - ../frontend:/app
+      - ../entregaprova-app:/app
       - /app/node_modules
     depends_on:
       - backend

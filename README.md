@@ -35,6 +35,157 @@ A proposta é digitalizar o caminho entre a entrega realizada e sua comprovaçã
 - **Pacote de comprovação:** organização dos documentos para apoiar o faturamento.
 
 ### Tecnologias do projeto
-A definir.
+- **Backend:** Node 22 LTS, TypeScript, Express e Firebase Admin
+- **Frontend:** Vite (`entregaprova-app`)
+- **Autenticação, banco e arquivos:** Firebase Auth, Firestore e Storage (emuladores locais nesta fase)
+- **Ambiente:** Docker e Docker Compose
+- **Deploy:** Firebase Hosting (frontend) e Render (API), ambos em plano gratuito
+- **Testes e qualidade:** Vitest, ESLint e GitHub Actions (CI)
+
+## Como subir o projeto
+
+Tudo roda localmente com Docker Compose e emuladores do Firebase. Nenhuma conta de nuvem, cartão ou segredo real é necessário.
+
+### Pré-requisitos
+
+- Docker e Docker Compose
+- Git
+- Node 22 LTS (apenas para rodar testes ou scripts fora do Docker)
+
+### Passo a passo
+
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/EntregaProva/EntregaProva.git
+   cd EntregaProva
+   ```
+2. Crie o arquivo de ambiente a partir do exemplo:
+   ```bash
+   cp .env.example .env
+   ```
+   Todos os valores do `.env.example` são falsos e já funcionam com os emuladores (projeto `demo-entregaprova`). Não é preciso alterar nada.
+3. Suba todos os serviços:
+   ```bash
+   docker compose up --build
+   ```
+   O `compose.yaml` da raiz inclui o `docker/docker-compose.yml`, que define o backend, o frontend e os emuladores.
+4. Em outro terminal, popule os emuladores com os dados de exemplo:
+   ```bash
+   docker compose exec backend npm run seed
+   ```
+   O seed é reproduzível: apaga e recria sempre os mesmos usuários no emulador de Auth. Ele recusa rodar fora dos emuladores.
+
+Para parar tudo: `docker compose down`. Para apagar também os dados: `docker compose down -v`.
+
+### Serviços e portas
+
+| Serviço | URL |
+|---|---|
+| Frontend (`entregaprova-app`, Vite) | http://localhost:5173 |
+| API (`backend`) | http://localhost:3000 |
+| Emulador de Auth | http://localhost:9099 |
+| Emulador de Firestore | http://localhost:8080 |
+| Emulador de Storage | http://localhost:9199 |
+| UI dos emuladores | http://localhost:4000 |
+
+### Usuários de teste
+
+Criados pelo seed no emulador de Auth.
+
+| Papel | E-mail | Senha |
+|---|---|---|
+| Admin / painel | admin@teste.com | Teste@123 |
+| Motorista | motorista@teste.com | Teste@123 |
+
+### Variáveis de ambiente
+
+O `.env.example` é dividido em três blocos:
+
+| Bloco | Variáveis | Observação |
+|---|---|---|
+| Geral | `NODE_ENV`, `GCP_PROJECT_ID` | O prefixo `demo-` garante que os emuladores nunca tocam na nuvem |
+| Backend | `PORT`, `STORAGE_BUCKET`, `*_EMULATOR_HOST` | O Compose já injeta os hosts dos emuladores. Só preencha se rodar a API fora do Docker |
+| Frontend (Vite) | `VITE_*` | Apontam para a API e para os emuladores locais |
+
+O arquivo `.env` real nunca vai para o GitHub.
+
+### Verificação rápida
+
+- `GET http://localhost:3000/` responde 200 com a mensagem "EntregaProva API está ativa!".
+- O login com um usuário de teste abre a tela inicial.
+- A UI dos emuladores (http://localhost:4000) mostra os usuários criados pelo seed.
+
+### Problemas comuns
+
+- **Porta ocupada:** pare o processo que a usa ou altere a porta no `.env`.
+- **Emuladores sem dados:** rode o seed de novo.
+- **Alterou o `.env`:** `docker compose down && docker compose up --build`.
+- **Dados antigos atrapalhando:** `docker compose down -v` e suba de novo.
+- **Rodando a API fora do Docker:** preencha no `.env` os três `*_EMULATOR_HOST` apontando para `localhost`.
+
+## Testes e qualidade
+
+Dentro de `backend/`:
+
+```bash
+npm ci
+npm run lint
+npm run build
+npm test
+```
+
+Os testes cobrem autorização, EP/BVA e Security Rules (estes últimos rodam contra o emulador). O CI executa a cada PR: lint e build (Node 22), `npm audit`, gitleaks e `docker compose build`. O job de testes do backend entra no CI quando a suíte estiver estável.
+
+## Estrutura do repositório
+
+| Pasta / arquivo | Conteúdo |
+|---|---|
+| `backend/` | API em TypeScript (Express + Firebase Admin), com `src/` e `tests/` |
+| `entregaprova-app/` | Frontend |
+| `docker/` | Dockerfiles e `docker-compose.yml` (backend, frontend e emuladores) |
+| `compose.yaml` | Ponto de entrada do Compose (inclui `docker/docker-compose.yml`) |
+| `firebase.json` | Configuração dos emuladores e do Firebase Hosting |
+| `firestore.rules` / `storage.rules` | Security Rules (deny-all: o acesso é só pela API) |
+| `testes/` | Testes de autorização, EP/BVA, Security Rules e carga |
+| `docs/` | Evidências de FinOps: `finops.md` e os prints do plano gratuito e das regras da `main` |
+| `.github/` | Workflows de CI e de deploy no Hosting, CODEOWNERS e template de PR |
+
+## Teste de carga (k6)
+
+Mede a latência (p95) da API. O script `health.js` chama só o `/healthz`, que não usa o banco, então o resultado mostra a latência da infraestrutura, sem lógica de negócio.
+
+### O k6 é opcional
+
+O k6 não faz parte do projeto. Não está no `package.json`, no Dockerfile nem no CI. Só precisa dele quem for rodar este teste.
+
+### Como rodar
+
+**Opção 1: com o k6 instalado**
+Instalação: https://grafana.com/docs/k6/latest/set-up/install-k6/
+
+```
+k6 run -e BASE_URL=http://localhost:3000 testes/carga/health.js
+```
+
+**Opção 2: sem instalar nada (usa o Docker)**
+
+```
+docker run --rm -i -e BASE_URL=http://host.docker.internal:3000 grafana/k6 run - < testes/carga/health.js
+```
+
+## Regras
+
+- Rodar no Compose local (`BASE_URL=http://localhost:PORTA`). Se rodar contra o Render, acorde a API antes (abra o `/healthz` no navegador) e use só o `/healthz`.
+- Nunca rodar contra o `/readyz` nem contra endpoints que leem ou gravam no Firestore real, para não gastar a cota diária.
+- Não aumentar `vus` nem `duration` sem combinar com o time.
+- Registrar os resultados em `docs/finops/latencia-p95.md`.
+
+## Documentação
+
+Os ADRs, a matriz de rastreabilidade e os relatórios de teste ficam em um repositório separado:
+
+https://github.com/EntregaProva/EntregaProva-documentation
+
+As evidências de FinOps ficam na pasta `docs/` deste repositório.
 
 **| EntregaProva — Da entrega à comprovação, com mais controle e eficiência.**
