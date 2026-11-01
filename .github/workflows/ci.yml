@@ -31,32 +31,17 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: ${{ matrix.package }}/package-lock.json
-
+      - uses: actions/setup-java@v4
+        if: matrix.package == 'backend'
+        with:
+          distribution: temurin
+          java-version: 21
+          
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - run: npm test
+      - run: npm test:emulator
         if: matrix.package == 'backend'
-
-  # DESATIVADO ate os testes do backend passarem (ver Bug Report no relatorio).
-  # Para reativar: remova o "# " do inicio de cada linha deste bloco.
-  # backend-test:
-  #   name: backend (test)
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       working-directory: backend
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: npm
-  #         cache-dependency-path: backend/package-lock.json
-
-  #     - run: npm ci
-  #     - run: npm test
 
   npm-audit:
     name: ${{ matrix.package }} (npm audit)

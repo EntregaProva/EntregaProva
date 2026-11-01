@@ -9,6 +9,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const emulator = process.env.FIRESTORE_EMULATOR_HOST;
+
+if (process.env.CI && !emulator) {
+  throw new Error("FIRESTORE_EMULATOR_HOST obrigatório no CI: as Security Rules não podem ser puladas.");
+}
+
 const [host, port] = (emulator ?? "127.0.0.1:8080").split(":");
 
 const entregas = "tenants/tenant-a/deliveries";
