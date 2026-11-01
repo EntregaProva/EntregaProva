@@ -150,6 +150,36 @@ Os testes cobrem autorização, EP/BVA e Security Rules (estes últimos rodam co
 | `docs/` | Evidências de FinOps: `finops.md` e os prints do plano gratuito e das regras da `main` |
 | `.github/` | Workflows de CI e de deploy no Hosting, CODEOWNERS e template de PR |
 
+## Teste de carga (k6)
+
+Mede a latência (p95) da API. O script `health.js` chama só o `/healthz`, que não usa o banco, então o resultado mostra a latência da infraestrutura, sem lógica de negócio.
+
+### O k6 é opcional
+
+O k6 não faz parte do projeto. Não está no `package.json`, no Dockerfile nem no CI. Só precisa dele quem for rodar este teste.
+
+### Como rodar
+
+**Opção 1: com o k6 instalado**
+Instalação: https://grafana.com/docs/k6/latest/set-up/install-k6/
+
+```
+k6 run -e BASE_URL=http://localhost:3000 testes/carga/health.js
+```
+
+**Opção 2: sem instalar nada (usa o Docker)**
+
+```
+docker run --rm -i -e BASE_URL=http://host.docker.internal:3000 grafana/k6 run - < testes/carga/health.js
+```
+
+## Regras
+
+- Rodar no Compose local (`BASE_URL=http://localhost:PORTA`). Se rodar contra o Render, acorde a API antes (abra o `/healthz` no navegador) e use só o `/healthz`.
+- Nunca rodar contra o `/readyz` nem contra endpoints que leem ou gravam no Firestore real, para não gastar a cota diária.
+- Não aumentar `vus` nem `duration` sem combinar com o time.
+- Registrar os resultados em `docs/finops/latencia-p95.md`.
+
 ## Documentação
 
 Os ADRs, a matriz de rastreabilidade e os relatórios de teste ficam em um repositório separado:
