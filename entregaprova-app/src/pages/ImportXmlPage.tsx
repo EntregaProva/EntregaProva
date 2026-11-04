@@ -7,6 +7,7 @@ import type { View } from "../views.ts";
 
 export default function ImportXmlPage({ onNavigate }: { onNavigate: (view: View) => void }) {
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [driverId, setDriverId] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [criada, setCriada] = useState<Delivery | null>(null);
@@ -25,6 +26,10 @@ export default function ImportXmlPage({ onNavigate }: { onNavigate: (view: View)
       setErro("Escolha um arquivo XML para importar.");
       return;
     }
+    if (!driverId.trim()) {
+      setErro("Informe o UID do motorista que receberá esta entrega.");
+      return;
+    }
     const problema = validarXml(arquivo);
     if (problema) {
       setErro(problema);
@@ -33,7 +38,7 @@ export default function ImportXmlPage({ onNavigate }: { onNavigate: (view: View)
     setErro(null);
     setEnviando(true);
     try {
-      const entrega = await importXml(arquivo);
+      const entrega = await importXml(arquivo, driverId.trim());
       setCriada(entrega);
       setArquivo(null);
       setFormKey((k) => k + 1); // limpa o campo de arquivo
@@ -50,14 +55,18 @@ export default function ImportXmlPage({ onNavigate }: { onNavigate: (view: View)
         <div>
           <p className="eyebrow">JORNADA 1</p>
           <h1>Importar XML</h1>
-          <p className="muted">Envie o XML da NF-e ou CT-e para criar a entrega pendente.</p>
+          <p className="muted">Envie o XML de uma NF-e 4.00 e atribua a entrega a um motorista.</p>
         </div>
       </section>
 
       <form key={formKey} className="panel form-panel" onSubmit={handleSubmit} noValidate>
-        <label htmlFor="xml">Arquivo XML da NF-e ou CT-e</label>
+        <label htmlFor="xml">Arquivo XML da NF-e 4.00</label>
         <input id="xml" type="file" accept=".xml,text/xml,application/xml" onChange={handleFile} aria-describedby="xml-dica" />
-        <p id="xml-dica" className="hint">Somente .xml, até {MAX_XML_MB} MB.</p>
+        <p id="xml-dica" className="hint">Somente XML de NF-e 4.00, até {MAX_XML_MB} MB. CT-e ainda não é aceito pela API.</p>
+
+        <label htmlFor="driver-id">UID do motorista</label>
+        <input id="driver-id" type="text" value={driverId} onChange={(event) => setDriverId(event.target.value)} autoComplete="off" aria-describedby="driver-id-hint" />
+        <p id="driver-id-hint" className="hint">Use o UID de um motorista da mesma empresa. A API ainda não oferece uma lista de motoristas para seleção.</p>
 
         {erro && (
           <div className="alert error" role="alert">
