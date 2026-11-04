@@ -37,3 +37,17 @@
 /* Jornada 3 e acessibilidade: controles claros, teclado e texto legível. */
 .review-panel{max-width:1100px}.review-select-label{display:block;font-size:14px;font-weight:600;margin-bottom:8px}.review-panel select,.review-actions textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font:inherit}.review-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.review-side{min-width:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.review-side h2{margin:0 0 14px;color:var(--navy);font-size:16px}.review-facts{margin:0;display:grid;gap:12px}.review-facts div{min-width:0}.review-facts dt{color:#536174;font-weight:600;font-size:14px}.review-facts dd{margin:3px 0 0;overflow-wrap:anywhere;font-size:14px}.review-photo{display:block;width:100%;max-height:360px;object-fit:contain;background:#F4F7FB;border-radius:9px;margin-bottom:14px}.review-actions{margin-top:18px}.review-actions label{display:block;font-weight:600;margin-bottom:7px}.review-actions label span{font-weight:400;color:#536174}.review-actions textarea{resize:vertical;min-height:84px}.danger-button{background:#B42318;color:#fff}.danger-button:hover{background:#912018}.state-box p,.hint,.alert,.muted{font-size:14px}.button,input,select,textarea{font-size:14px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
 @media(max-width:720px){.review-columns{grid-template-columns:1fr}.review-panel{padding:14px}.review-side{padding:14px}}
+
+/* Leitura e contraste para uso em celular e desktop. */
+:root{--blue:#075DBA;--muted:#536174}
+body{font-size:14px}
+.nav-label,.help-card strong,.help-card p,.profile strong,.profile small,.breadcrumb,.eyebrow,.button,.button.small,.stat-label,.stat-foot,.trend,.table-actions input,th,td,td strong,td small,.status,.table-footer,footer,.toast,dialog label,.login-card label,.form-panel label{font-size:14px}
+.api-status,.api-status-text{font-size:14px}
+.nav-label,.eyebrow,.stat-foot,.stat-label,.profile small,.breadcrumb span,.table-footer,footer,td small,.dots,.more-btn{color:#536174}
+th{color:#536174}
+.button.primary{background:#075DBA}
+.button.primary:hover{background:#064D99}
+.warning{color:#795600}
+.danger-status{color:#A61B1B}
+.success{color:#12623F}
+.nav-item:hover,.nav-item.active{color:#075DBA}
