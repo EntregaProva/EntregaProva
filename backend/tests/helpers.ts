@@ -5,7 +5,7 @@ import { createApp } from "../src/app.js";
 
 export const key = "35231012345678000195550010000001011234567891";
 export const xml = (version = "4.00", accessKey = key) =>
-  `<NFe><infNFe Id="NFe${accessKey}" versao="${version}"><ide><nNF>1</nNF><cDV>${accessKey[43]}</cDV></ide><dest><xNome>DESTINATARIO SINTETICO</xNome></dest><total><ICMSTot><vNF>10.00</vNF></ICMSTot></total></infNFe></NFe>`;
+  `<NFe><infNFe Id="NFe${accessKey}" versao="${version}"><ide><nNF>1</nNF><cDV>${accessKey[43]}</cDV></ide><emit><xNome>EMITENTE SINTETICO</xNome></emit><dest><xNome>DESTINATARIO SINTETICO</xNome></dest><total><ICMSTot><vNF>10.00</vNF></ICMSTot></total></infNFe></NFe>`;
 export const path = (tenant = "tenant-a", id = key) => `tenants/${tenant}/deliveries/${id}`;
 export const jpeg = Buffer.from([255, 216, 255, 224, 0, 16, 255, 217]);
 
@@ -62,6 +62,7 @@ export function fixture() {
   const deps = {
     auth: { verifyIdToken }, db: { doc, runTransaction },
     storage: { bucket: () => ({ file: (name: string) => ({
+      exists: async () => [objects.has(name)],
       save: (bytes: Buffer, options: unknown) => save(name, bytes, options),
       getSignedUrl: (options: unknown) => sign(name, options),
     }) }) }, logger,

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "delete-obsolete-api-images",
+    "action": { "type": "Delete" },
+    "condition": { "tagState": "any", "packageNamePrefixes": ["entregaprova-api"] }
+  },
+  {
+    "name": "keep-five-api-images",
+    "action": { "type": "Keep" },
+    "mostRecentVersions": { "packageNamePrefixes": ["entregaprova-api"], "keepCount": 5 }
+  }
+]

@@ -1,6 +1,7 @@
 {
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "storage": {
     "rules": "storage.rules"
@@ -33,6 +34,18 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/**",
+        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
+      },
+      {
+        "source": "/healthz",
+        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
+      },
+      {
+        "source": "/readyz",
+        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
+      },
       {
         "source": "**",
         "destination": "/index.html"

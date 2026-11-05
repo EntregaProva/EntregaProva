@@ -12,7 +12,10 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "tsc -p tsconfig.test.json && vitest run",
     "test:rules": "firebase emulators:exec --only firestore --project demo-entregaprova \"vitest run tests/security/firestore-rules.test.ts\"",
-    "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@latest emulators:exec --only firestore --project demo-entregaprova --config ../firebase.json \"vitest run\""
+    "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json \"vitest run\"",
+    "test:smoke": "node --test scripts/smoke.check.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "verify:published": "node scripts/verify-published.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

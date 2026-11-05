@@ -1,0 +1,14 @@
+{
+  "displayName": "EntregaProva - armazenamento acima de 1 GB",
+  "combiner": "OR", "enabled": true,
+  "notificationChannels": ["${NOTIFICATION_CHANNEL}"],
+  "conditions": [{
+    "displayName": "Bytes totais do bucket",
+    "conditionThreshold": {
+      "filter": "resource.type=\"gcs_bucket\" AND resource.label.bucket_name=\"${STORAGE_BUCKET}\" AND metric.type=\"storage.googleapis.com/storage/total_bytes\"",
+      "aggregations": [{ "alignmentPeriod": "3600s", "perSeriesAligner": "ALIGN_MAX", "crossSeriesReducer": "REDUCE_SUM", "groupByFields": ["resource.label.bucket_name"] }],
+      "comparison": "COMPARISON_GT", "thresholdValue": 1000000000, "duration": "3600s", "trigger": { "count": 1 }
+    }
+  }],
+  "documentation": { "mimeType": "text/markdown", "content": "Threshold de planejamento, não exigência do tutor. Conferir lifecycle de 60 dias, objetos sem referência e gasto; nunca excluir comprovantes manualmente sem avaliar a retenção aprovada." }
+}

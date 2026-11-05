@@ -1,20 +1,9 @@
 import * as admin from "firebase-admin";
-
-const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-const serviceAccount = serviceAccountJson ? JSON.parse(serviceAccountJson) : undefined;
-
-const projectId =
-  serviceAccount?.project_id || process.env.GCP_PROJECT_ID || "demo-entregaprova";
+import { readFirebaseConfig } from "./runtime.js";
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId,
-    ...(serviceAccount && { credential: admin.credential.cert(serviceAccount) }),
-    storageBucket:
-      process.env.STORAGE_BUCKET ||
-      process.env.STORAGE_BUCKET_NAME ||
-      `${projectId}.appspot.com`,
-  });
+  // ADC uses the Cloud Run service identity; emulators need no real key.
+  admin.initializeApp(readFirebaseConfig());
 }
 
 export const auth = admin.auth();

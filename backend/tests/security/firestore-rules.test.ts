@@ -35,8 +35,10 @@ describe.skipIf(!emulator)("Security Rules deny-all (Firestore)", () => {
   afterAll(() => env.cleanup());
 
   beforeEach(async () => {
-    await env.clearFirestore();
     await env.withSecurityRulesDisabled(async (ctx) => {
+      // Keep parallel integration fixtures in other tenants intact.
+      const existing = await getDocs(collection(ctx.firestore(), entregas));
+      await Promise.all(existing.docs.map(item => deleteDoc(item.ref)));
       await setDoc(doc(ctx.firestore(), `${entregas}/d1`), { status: "pendente" });
     });
   });

@@ -4,6 +4,7 @@ import { DocumentData, DocumentSnapshot } from "firebase-admin/firestore";
 import { AppDependencies } from "../dependencies.js";
 import { parseNFeXML } from "../utils/xmlParser.js";
 import { HttpError } from "../utils/httpError.js";
+import { listTenantDeliveries, } from "../services/delivery-list.service.js";
 
 const LEASE_MS = 60_000;
 export const SIGNED_URL_MS = 15 * 60 * 1000;
@@ -46,6 +47,7 @@ export function createDeliveryControllers(deps: AppDependencies) {
     }
     const data = {
       tenantId: req.user!.tenantId, chaveNFe: parsed.chave, numeroNF: parsed.numero,
+      emitente: parsed.emitente,
       valorTotal: parsed.valorTotal, destinatario: parsed.destinatario,
       status: "PENDENTE", criadoEm: new Date().toISOString(), criadoPor: req.user!.uid,
       driverId: driverId ?? null,
@@ -56,6 +58,20 @@ export function createDeliveryControllers(deps: AppDependencies) {
       tx.create(ref, data);
     });
     res.status(201).json({ id: parsed.chave, ...data });
+  });
+
+  const listDeliveries = wrap(async (req, res) => {
+    if (!req.user) {
+      throw new HttpError(401, "Autenticação obrigatória");
+    }
+
+    const result = await listTenantDeliveries(
+      deps,
+      req.user,
+      req.query,
+    );
+
+    res.json(result);
   });
 
   const getDelivery = wrap(async (req, res) => {
@@ -172,5 +188,5 @@ export function createDeliveryControllers(deps: AppDependencies) {
     res.json({ id: req.params.id, ...update });
   });
 
-  return { authorizeDelivery, importXML, getDelivery, submitProof, checkProof };
+  return { authorizeDelivery, importXML, listDeliveries, getDelivery, submitProof, checkProof };
 }
