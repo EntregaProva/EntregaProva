@@ -1,55 +1,48 @@
-# Contrato proposto para integração do front-end
+# Contrato de integração do frontend EntregaProva
 
-Este documento registra os formatos esperados pelo front-end. No repositório atual, o backend implementa apenas `GET /api/v1/health`; todas as outras rotas abaixo são uma proposta para alinhamento com o responsável pelo backend, não endpoints já disponíveis.
+Baseado nas rotas atuais em `backend/src/routes/index.ts` e nos campos de `backend/src/controllers/delivery.controller.ts` (checkout local lido em 04/11/2026).
 
 ## Geral
 
 - Base local: `http://localhost:3000/api/v1`.
-- Requisições autenticadas: `Authorization: Bearer <Firebase ID token>`.
-- Erros JSON: preferir `{ "message": "..." }`.
-- Todas as entregas devem ser filtradas pela empresa (tenant) e papel do token no backend.
+- Todas as rotas de jornada exigem `Authorization: Bearer <Firebase ID token>`.
+- Empresa e papel vêm das claims `tenantId` e `role`; papéis aceitos: `admin`, `operator`, `driver`.
+- A resposta atual do backend usa nomes em português e status `PENDENTE`, `COMPROVADO`, `CONFERIDO`, `REJEITADO`. O frontend os adapta para seus tipos e rótulos.
 
-## Entrega
+## Rotas disponíveis no backend
 
-`Delivery`:
-
-```json
-{
-  "id": "id estável",
-  "invoiceNumber": "número NF-e/CT-e",
-  "accessKey": "chave fiscal",
-  "recipient": "destinatário",
-  "status": "pendente | capturada | conferida | divergente",
-  "createdAt": "data ISO 8601"
-}
-```
-
-| Método e caminho | Corpo | Resposta esperada |
+| Operação | Rota e corpo aceitos | Resposta observada |
 |---|---|---|
-| `GET /deliveries` | — | `Delivery[]` |
-| `POST /deliveries/import-xml` | multipart `file` (XML NF-e/CT-e) | `Delivery` criada |
-| `POST /deliveries/{id}/proof` | multipart `photo`, `receiverName`, `capturedAt`; header `Idempotency-Key` | `Delivery` atualizada |
-| `GET /deliveries/review` | — | `ReviewItem[]` pendentes de conferência |
-| `POST /deliveries/{id}/review` | JSON `{ decision: "approved" | "rejected", reason?: string }` | 204 ou registro atualizado |
+| Importar NF-e | `POST /deliveries/xml`, JSON `{ xmlContent, driverId }`; `driverId` é opcional no backend | Entrega com `id`, `numeroNF`, `chaveNFe`, `destinatario`, `status`, `criadoEm` |
+| Ler uma entrega | `GET /deliveries/{id}`; ID deve ter 44 dígitos | Entrega; se houver comprovante, inclui `arquivoUrl` e `expiraEm` assinados por 15 min |
+| Enviar comprovante | `POST /deliveries/{id}/proof`, multipart `file`, `recebedorNome`, `dataHoraEntrega`; header `Idempotency-Key` | Resultado parcial do upload, não uma entrega completa |
+| Conferir | `PATCH /deliveries/{id}/check`, JSON `{ aprovado: boolean, motivoRejeicao?: string }` | ID, status atualizado e dados da conferência |
 
-## Item para conferência
+O backend também mantém aliases em português (`/entregas/xml`, `/entregas/{id}`, `/entregas/{id}/comprovantes`, `/entregas/{id}/conferencia`).
 
-```json
-{
-  "deliveryId": "id estável",
-  "invoiceNumber": "...",
-  "accessKey": "...",
-  "recipient": "...",
-  "xml": { "invoiceNumber": "...", "accessKey": "...", "recipient": "..." },
-  "proof": { "photoUrl": "URL autorizada", "receiverName": "...", "capturedAt": "data ISO 8601" }
+## Bloqueios de backend para as telas de lista
+
+- `GET /deliveries` ainda não existe. A lista principal e a tela de captura continuarão em erro até o backend implementar uma consulta paginada por tenant e, para `driver`, por UID do motorista.
+- `GET /deliveries/review` ainda não existe. O backend precisa implementá-la antes de `GET /deliveries/:id`, filtrar `COMPROVADO`, restringir a `admin`/`operator` e fechar o formato paginado.
+- Esta cópia espera que a fila retorne IDs de entrega; para cada ID, o frontend chama a leitura autorizada `GET /deliveries/{id}` e usa a URL assinada. O backend deve confirmar esse formato na reunião de contrato.
+- O backend aceita `driverId` mas não valida que o UID pertence a um motorista da mesma empresa. A importação pede o UID; a seleção segura depende de uma rota/consulta de motoristas autorizados e validação no backend.
+
+## Limites que ainda divergem
+
+- O parser aceita apenas NF-e 4.00; CT-e não está implementado.
+- O backend aceita JPEG, PNG e PDF até 5 MiB. A cópia revisada comprime fotos no navegador para JPEG até 1280 px e até 300 KiB, conforme a meta anotada no feedback. Se 300 KiB for regra do cliente, o backend ainda deve reduzir o limite para 300 KiB e devolver 413 acima dele.
+- Leitura de foto usa URL assinada com validade de 15 minutos. O frontend precisa recarregar a fila/leitura quando a URL expirar.
+
+## Tipos adaptados na interface
+
+```ts
+interface Delivery {
+  id: string;
+  invoiceNumber: string;
+  accessKey: string;
+  recipient: string;
+  status: "PENDENTE" | "COMPROVADO" | "CONFERIDO" | "REJEITADO" | string;
+  createdAt: string;
+  proof?: { photoUrl: string; receiverName: string; capturedAt: string; expiresAt?: string };
 }
 ```
-
-A URL da foto deve ter autorização compatível com a sessão (por exemplo, URL assinada de curta duração). Não expor arquivos de outras empresas. O backend valida MIME, tamanho, ownership, tenant e papel do usuário; as validações de interface não substituem isso.
-
-## Alinhamentos necessários
-
-1. Confirmar os nomes das rotas, campos e status com o OpenAPI do backend.
-2. Confirmar o status que indica fila de conferência e o que aparece após aprovar/rejeitar.
-3. Confirmar limite e tipos de XML/foto, idempotência e como a imagem autenticada será lida.
-4. Implementar verificação do Firebase ID token e isolamento por tenant em cada rota de jornada.

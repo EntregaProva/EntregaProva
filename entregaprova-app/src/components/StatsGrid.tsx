@@ -6,9 +6,9 @@ export default function StatsGrid({ deliveries }: { deliveries: Delivery[] }) {
 
   const cards = [
     { icon: "▣", cor: "blue-bg", label: "Total de entregas", valor: deliveries.length, nota: "Importadas até agora" },
-    { icon: "✓", cor: "green-bg", label: "Conferidas", valor: contar("conferida"), nota: "Comprovante validado" },
-    { icon: "◷", cor: "yellow-bg", label: "Aguardando", valor: contar("pendente", "capturada"), nota: "Precisam de acompanhamento" },
-    { icon: "!", cor: "red-bg", label: "Diferentes", valor: contar("diferente"), nota: "Documentos para revisar" },
+    { icon: "✓", cor: "green-bg", label: "Conferidas", valor: contar("CONFERIDO"), nota: "Comprovante validado" },
+    { icon: "◷", cor: "yellow-bg", label: "Aguardando", valor: contar("PENDENTE", "COMPROVADO"), nota: "Precisam de acompanhamento" },
+    { icon: "!", cor: "red-bg", label: "Rejeitadas", valor: contar("REJEITADO"), nota: "Precisam de novo comprovante" },
   ];
 
   return (
