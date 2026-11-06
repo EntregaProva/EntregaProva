@@ -3,11 +3,11 @@ import request from "supertest";
 import { fixture, jpeg, key, path, xml } from "./helpers.js";
 import { MAX_PROOF_BYTES } from "../src/config/proof.js";
 import { hasValidProofSignature } from "../src/utils/proofFile.js";
-import { readFirebaseConfig } from "../src/config/runtime.js";
+import { readFirebaseConfig, readProofStorageConfig } from "../src/config/runtime.js";
 import { createCorsOptions } from "../src/config/cors.js";
 
-describe("CP3: operação, privacidade e comprovantes", () => {
-  const upload = (f: ReturnType<typeof fixture>, bytes = jpeg, idem = "cp3-proof") =>
+describe("Operação, privacidade e comprovantes", () => {
+  const upload = (f: ReturnType<typeof fixture>, bytes = jpeg, idem = "proof-upload") =>
     request(f.app).post(`/api/v1/entregas/${key}/comprovantes`).auth("driver", { type: "bearer" })
       .set("Idempotency-Key", idem).field("recebedor", "NOME SINTETICO")
       .field("dataHora", "2026-11-05T10:00:00-03:00")
@@ -66,6 +66,18 @@ describe("CP3: operação, privacidade e comprovantes", () => {
     expect(hasValidProofSignature("text/plain", Buffer.from("%PDF-"))).toBe(false);
   });
 
+  it("envia WebP pela rota real e recusa PDF disfarçado de WebP sem gravar", async () => {
+    const f = fixture(); f.seed();
+    const send = (bytes: Buffer) => request(f.app).post(`/api/v1/entregas/${key}/comprovantes`)
+      .auth("driver", { type: "bearer" }).set("Idempotency-Key", "webp")
+      .field("recebedor", "NOME SINTETICO").field("dataHora", "2026-11-05T10:00:00Z")
+      .attach("foto", bytes, { filename: "foto.webp", contentType: "image/webp" });
+    expect((await send(Buffer.from("%PDF-"))).status).toBe(415);
+    expect(f.objects.size).toBe(0);
+    expect((await send(Buffer.from("RIFF0000WEBP"))).status).toBe(200);
+    expect(f.save.mock.calls[0][2]).toMatchObject({ metadata: { contentType: "image/webp" } });
+  });
+
   it("arquivo removido por lifecycle não causa 500 nem ressurge num retry", async () => {
     const f = fixture(); f.seed();
     expect((await upload(f)).status).toBe(200);
@@ -89,15 +101,24 @@ describe("CP3: operação, privacidade e comprovantes", () => {
   });
 });
 
-describe("CP3: configuração de identidade", () => {
-  it("configura runtime sem JSON e sem pressupor domínio do bucket", () => {
-    expect(readFirebaseConfig({ NODE_ENV: "production", GCP_PROJECT_ID: "projeto-real", STORAGE_BUCKET: "bucket-configurado" }))
-      .toEqual({ projectId: "projeto-real", storageBucket: "bucket-configurado" });
+describe("Configuração de identidade", () => {
+  it("produção usa Firebase Auth/Firestore sem exigir bucket Google", () => {
+    expect(readFirebaseConfig({ NODE_ENV: "production", FIREBASE_PROJECT_ID: "projeto-real" }))
+      .toEqual({ projectId: "projeto-real" });
   });
   it("recusa emuladores, chave estática ou configuração incompleta em produção", () => {
     const valid = { NODE_ENV: "production", GCP_PROJECT_ID: "projeto-real", STORAGE_BUCKET: "bucket-configurado" };
     expect(() => readFirebaseConfig({ ...valid, FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099" })).toThrow();
     expect(() => readFirebaseConfig({ ...valid, FIREBASE_SERVICE_ACCOUNT_JSON: "valor-sintetico" })).toThrow();
     expect(() => readFirebaseConfig({ NODE_ENV: "production" })).toThrow();
+  });
+
+  it("exige Supabase em produção e permite Firebase Storage somente emulado", () => {
+    const config = { NODE_ENV: "production", SUPABASE_URL: "https://projeto.supabase.co", SUPABASE_SECRET_KEY: "segredo-sintetico", SUPABASE_STORAGE_BUCKET: "comprovantes" };
+    expect(readProofStorageConfig(config).provider).toBe("supabase");
+    expect(() => readProofStorageConfig({ ...config, PROOF_STORAGE_PROVIDER: "firebase-emulator" })).toThrow();
+    expect(() => readProofStorageConfig({ ...config, SUPABASE_SECRET_KEY: "" })).toThrow();
+    expect(() => readProofStorageConfig({ ...config, SUPABASE_URL: "http://projeto.supabase.co" })).toThrow();
+    expect(readProofStorageConfig({ FIREBASE_STORAGE_EMULATOR_HOST: "localhost:9199" }).provider).toBe("firebase-emulator");
   });
 });

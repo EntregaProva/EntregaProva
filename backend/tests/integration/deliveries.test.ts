@@ -5,7 +5,7 @@ import { jpeg, key, xml } from "../helpers.js";
 
 if (process.env.CI && !emulatorsReady) throw new Error("CI precisa exercitar Auth, Firestore e Storage emulados");
 
-describe.skipIf(!emulatorsReady)("CP3: integração real Auth + Firestore + Storage emulados", () => {
+describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage emulados", () => {
   let f: Awaited<ReturnType<typeof emulatorFixture>>;
   beforeAll(async () => { f = await emulatorFixture(); }, 60_000);
   beforeEach(async () => { await f.clear(); }, 30_000);

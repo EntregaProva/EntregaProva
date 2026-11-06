@@ -2,6 +2,8 @@ import { vi } from "vitest";
 import { DocumentData } from "firebase-admin/firestore";
 import { AppDependencies } from "../src/dependencies.js";
 import { createApp } from "../src/app.js";
+import { createEmulatorProofStorage } from "../src/services/proof-storage.js";
+import type { Storage } from "firebase-admin/storage";
 
 export const key = "35231012345678000195550010000001011234567891";
 export const xml = (version = "4.00", accessKey = key) =>
@@ -61,11 +63,11 @@ export function fixture() {
   const logger = { info: vi.fn(), error: vi.fn() };
   const deps = {
     auth: { verifyIdToken }, db: { doc, runTransaction },
-    storage: { bucket: () => ({ file: (name: string) => ({
+    proofStorage: createEmulatorProofStorage({ bucket: () => ({ file: (name: string) => ({
       exists: async () => [objects.has(name)],
       save: (bytes: Buffer, options: unknown) => save(name, bytes, options),
       getSignedUrl: (options: unknown) => sign(name, options),
-    }) }) }, logger,
+    }) }) } as unknown as Pick<Storage, "bucket">), logger,
   } as unknown as AppDependencies;
   const seed = (tenant = "tenant-a", driverId = "driver-a") =>
     documents.set(path(tenant), { status: "PENDENTE", driverId, chaveNFe: key });

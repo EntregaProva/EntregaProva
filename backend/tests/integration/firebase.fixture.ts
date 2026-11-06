@@ -5,6 +5,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { createApp } from "../../src/app.js";
 import { vi } from "vitest";
+import { createEmulatorProofStorage } from "../../src/services/proof-storage.js";
 
 export const emulatorsReady = ["FIREBASE_AUTH_EMULATOR_HOST", "FIRESTORE_EMULATOR_HOST", "FIREBASE_STORAGE_EMULATOR_HOST"]
   .every(key => Boolean(process.env[key]));
@@ -12,7 +13,7 @@ export const emulatorsReady = ["FIREBASE_AUTH_EMULATOR_HOST", "FIRESTORE_EMULATO
 export async function emulatorFixture() {
   if (!emulatorsReady) throw new Error("Auth, Firestore e Storage emulados são obrigatórios");
   const run = randomUUID();
-  const firebase = initializeApp({ projectId: "demo-entregaprova", storageBucket: "demo-entregaprova.appspot.com" }, `cp3-${run}`);
+  const firebase = initializeApp({ projectId: "demo-entregaprova", storageBucket: "demo-entregaprova.appspot.com" }, `integration-${run}`);
   const auth = getAuth(firebase);
   const db = getFirestore(firebase);
   const storage = getStorage(firebase);
@@ -38,7 +39,7 @@ export async function emulatorFixture() {
     tokens[user.name] = (await response.json() as { idToken: string }).idToken;
   }
   const signer = vi.fn(async (_path: string, _expires: number) => "https://signer-test.invalid/proof");
-  const app = createApp({ auth, db, storage, proofUrlSigner: signer, logger: { info: vi.fn(), error: vi.fn() } });
+  const app = createApp({ auth, db, proofStorage: createEmulatorProofStorage(storage, signer), logger: { info: vi.fn(), error: vi.fn() } });
   const clear = async () => {
     await Promise.all([db.recursiveDelete(db.doc(`tenants/${tenant}`)), db.recursiveDelete(db.doc(`tenants/${otherTenant}`))]);
     for (const tenantId of [tenant, otherTenant]) {

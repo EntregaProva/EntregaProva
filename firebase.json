@@ -35,18 +35,6 @@
     ],
     "rewrites": [
       {
-        "source": "/api/**",
-        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
-      },
-      {
-        "source": "/healthz",
-        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
-      },
-      {
-        "source": "/readyz",
-        "run": { "serviceId": "entregaprova-api", "region": "us-central1", "pinTag": true }
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }

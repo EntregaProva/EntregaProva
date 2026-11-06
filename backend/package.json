@@ -15,9 +15,11 @@
     "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json \"vitest run\"",
     "test:smoke": "node --test scripts/smoke.check.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "verify:published": "node scripts/verify-published.mjs"
+    "verify:published": "node scripts/verify-published.mjs",
+    "cleanup:proofs": "node scripts/cleanup-proofs.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.119.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

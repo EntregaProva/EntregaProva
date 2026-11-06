@@ -1,9 +1,9 @@
-name: CP3 - Hosting preview
+name: Hosting preview
 on: pull_request
 permissions:
   contents: read
 concurrency:
-  group: cp3-preview-${{ github.event.pull_request.number }}
+  group: hosting-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
   checks:
@@ -14,63 +14,33 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      checks: write
       pull-requests: write
     env:
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-      PREVIEW_CHANNEL: pr-${{ github.event.pull_request.number }}
+      VITE_API_URL: ${{ vars.API_BASE_URL }}
+      VITE_API_PREFIX: /api/v1
+      VITE_USE_EMULATORS: "false"
+      VITE_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
       VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: entregaprova-app/package-lock.json
+      - name: Conferir configuração pública do frontend
+        run: node infra/deploy/check-web-config.mjs
       - run: npm ci
         working-directory: entregaprova-app
-      - name: Require real Firebase Web configuration
-        run: test -n "$GCP_PROJECT_ID" && test -n "$VITE_FIREBASE_API_KEY"
       - run: npm run build
         working-directory: entregaprova-app
-        env:
-          VITE_API_URL: ""
-          VITE_API_PREFIX: /api/v1
-          VITE_USE_EMULATORS: "false"
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-      - uses: google-github-actions/auth@v3
+      - name: Verificar a API publicada usada pelo preview
+        run: node backend/scripts/smoke.mjs "$VITE_API_URL"
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v2
-      - name: Ensure Hosting will pin only a promoted API revision
-        run: |
-          gcloud run services describe "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format=json > "$RUNNER_TEMP/api-state.json"
-          node infra/cp3/verify-hosting-api.mjs "$RUNNER_TEMP/api-state.json" > "$RUNNER_TEMP/preview-revision"
-      - run: node infra/cp3/render-hosting.mjs
-      - name: Publish preview using temporary WIF credentials
-        run: npx --yes firebase-tools@13.35.1 hosting:channel:deploy "$PREVIEW_CHANNEL" --expires 7d --config .firebase/cp3-hosting.json --project "$GCP_PROJECT_ID" --non-interactive --json > "$RUNNER_TEMP/preview.json"
-      - name: Verify API did not change while publishing preview
-        run: |
-          gcloud run services describe "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format=json > "$RUNNER_TEMP/api-state.json"
-          node infra/cp3/verify-hosting-api.mjs "$RUNNER_TEMP/api-state.json" "$(cat "$RUNNER_TEMP/preview-revision")"
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('node:fs');
-            const result = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/preview.json`, 'utf8'));
-            const urls = new Set();
-            function walk(value) {
-              if (!value || typeof value !== 'object') return;
-              for (const [key, item] of Object.entries(value)) {
-                if (key === 'url' && typeof item === 'string' && item.startsWith('https://')) urls.add(item);
-                else walk(item);
-              }
-            }
-            walk(result.result);
-            if (!urls.size) throw new Error('Firebase did not return a preview URL');
-            await github.rest.issues.createComment({
-              ...context.repo, issue_number: context.issue.number,
-              body: `Preview CP3: ${[...urls].join(' ')}\n\nA API é a revisão publicada do Cloud Run; este preview não implanta o backend do PR.`,
-            });
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ENTREGAPROVA }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: pr-${{ github.event.pull_request.number }}
+          expires: 7d

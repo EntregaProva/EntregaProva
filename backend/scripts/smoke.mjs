@@ -19,9 +19,9 @@ export async function smoke(base, expectedRevision, fetcher = fetch) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const base = process.argv[2] || process.env.CP3_TARGET_URL;
-    if (!base) throw new Error("Informe URL candidata como argumento ou CP3_TARGET_URL");
-    console.log(JSON.stringify(await smoke(base, process.argv[3] || process.env.CP3_EXPECTED_REVISION)));
+    const base = process.argv[2] || process.env.TARGET_API_URL;
+    if (!base) throw new Error("Informe URL candidata como argumento ou TARGET_API_URL");
+    console.log(JSON.stringify(await smoke(base, process.argv[3] || process.env.EXPECTED_API_REVISION)));
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

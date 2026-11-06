@@ -2,7 +2,8 @@ import * as admin from "firebase-admin";
 import { readFirebaseConfig } from "./runtime.js";
 
 if (!admin.apps.length) {
-  // ADC uses the Cloud Run service identity; emulators need no real key.
+  // Render: ADC reads GOOGLE_APPLICATION_CREDENTIALS from a mounted secret file.
+  // Local emulators need no real key.
   admin.initializeApp(readFirebaseConfig());
 }
 

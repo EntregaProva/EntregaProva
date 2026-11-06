@@ -4,7 +4,8 @@ import { DocumentData, DocumentSnapshot } from "firebase-admin/firestore";
 import { AppDependencies } from "../dependencies.js";
 import { parseNFeXML } from "../utils/xmlParser.js";
 import { HttpError } from "../utils/httpError.js";
-import { listTenantDeliveries, } from "../services/delivery-list.service.js";
+import { listTenantDeliveries } from "../services/delivery-list.service.js";
+import { hasValidProofSignature } from "../utils/proofFile.js";
 
 const LEASE_MS = 60_000;
 export const SIGNED_URL_MS = 15 * 60 * 1000;
@@ -27,11 +28,12 @@ export function createDeliveryControllers(deps: AppDependencies) {
     return data;
   };
   const signed = async (path: string) => {
+    if (!await deps.proofStorage.exists(path)) {
+      return { arquivoDisponivel: false, arquivoUrl: null, expiraEm: null };
+    }
     const expires = Date.now() + SIGNED_URL_MS;
-    const [arquivoUrl] = await deps.storage.bucket().file(path).getSignedUrl({
-      version: "v4", action: "read", expires,
-    });
-    return { arquivoUrl, expiraEm: new Date(expires).toISOString() };
+    const arquivoUrl = await deps.proofStorage.signedUrl(path, expires);
+    return { arquivoDisponivel: true, arquivoUrl, expiraEm: new Date(expires).toISOString() };
   };
 
   const authorizeDelivery = wrap(async (req, _res, next) => {
@@ -100,10 +102,9 @@ export function createDeliveryControllers(deps: AppDependencies) {
         !Number.isFinite(Date.parse(dataHoraEntrega))) {
       throw new HttpError(400, "Foto, nome do recebedor e data/hora ISO com fuso são obrigatórios");
     }
-    const validMagic = file.mimetype === "image/jpeg" ? file.buffer.subarray(0, 3).equals(Buffer.from([255, 216, 255])) :
-      file.mimetype === "image/png" ? file.buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) :
-      file.buffer.subarray(0, 5).toString() === "%PDF-";
-    if (!validMagic) throw new HttpError(415, "Conteúdo do arquivo incompatível com o tipo informado");
+    if (!hasValidProofSignature(file.mimetype, file.buffer)) {
+      throw new HttpError(415, "Conteúdo do arquivo incompatível com o tipo informado");
+    }
     const ref = refFor(req);
     const idemRef = deps.db.doc(`tenants/${req.user!.tenantId}/idempotency/${key}`);
     const fingerprint = createHash("sha256").update(JSON.stringify([
@@ -131,17 +132,8 @@ export function createDeliveryControllers(deps: AppDependencies) {
     });
     let proof = reserved.proof;
     if (!reserved.completed) {
-      const blob = deps.storage.bucket().file(path);
-      try {
-        // Outside the Firestore callback: transaction retries must not repeat uploads.
-        await blob.save(file.buffer, {
-          resumable: false, metadata: { contentType: file.mimetype },
-          preconditionOpts: { ifGenerationMatch: 0 },
-        });
-      } catch (error) {
-        // A previous attempt may have uploaded successfully before losing its response.
-        if ((error as { code?: number }).code !== 412) throw error;
-      }
+      // Outside Firestore callbacks: retries must not repeat side effects.
+      await deps.proofStorage.uploadIfAbsent(path, file.buffer, file.mimetype);
       proof = {
         recebedorNome: recebedorNome.trim(), dataHoraEntrega, arquivoPath: path,
         enviadoEm: new Date().toISOString(), motoristaId: req.user!.uid,
@@ -158,9 +150,11 @@ export function createDeliveryControllers(deps: AppDependencies) {
       });
     }
     const { arquivoPath, ...publicProof } = proof;
+    const access = await signed(arquivoPath);
+    if (!access.arquivoDisponivel) throw new HttpError(410, "Arquivo do comprovante não está mais disponível");
     res.json({
       message: "Comprovante registrado com sucesso", id: req.params.id, status: "COMPROVADO",
-      comprovante: { ...publicProof, ...await signed(arquivoPath) },
+      comprovante: { ...publicProof, ...access },
     });
   });
 

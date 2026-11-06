@@ -1,118 +1,81 @@
-# Backend — CP2 e preparação do CP3
+# Backend
 
-Execute `npm ci`, `npm run lint`, `npm run build` e `npm test` nesta pasta.
-`npm test` inclui checagem de tipos dos testes e execução do Vitest.
-`npm run dev` inicia o servidor; `npm start` usa o build de `dist`.
+API Express/TypeScript publicada no Render, com Firebase Auth e Firestore.
+Comprovantes de produção ficam no Supabase Storage privado. Firebase Storage
+permanece apenas nos emuladores locais. Configuração e passos de implantação:
+[guia operacional](../docs/runbooks/backend.md).
 
-## Inicialização e autenticação
+## Execução e validação
 
-`createApp(deps)` em `src/app.ts` recebe `auth`, `db`, `storage` e `logger`.
-Importar a fábrica não inicializa Firebase nem abre uma porta. Somente `server.ts`
-monta as dependências reais. O logger real escreve uma linha JSON por evento.
+Usar Node 24 (dependências Firebase de testes exigem pelo menos 24.12).
+Com as variáveis do ambiente configuradas:
 
-As rotas de negócio exigem token Firebase verificado com custom claims `tenantId`
-e `role` (`admin`, `operator` ou `driver`). Não há fallback de tenant por header ou
-de papel. A identidade não é aceita pelo corpo da requisição.
+```sh
+npm ci
+npm run lint
+npm run build
+npm run test:smoke
+npm run test:emulator
+npm run dev
+```
 
-Os documentos são gravados em `tenants/{tenantId}/deliveries/{chave44}`.
-O motorista só acessa entregas cujo `driverId` corresponde ao UID autenticado.
-Operadores podem informar `driverId` na importação. Uma entrega sem motorista
-atribuído não pode ser acessada por um motorista; o administrador pode operá-la.
-As regras deny-all existentes continuam aplicadas aos clientes: o backend usa
-Admin SDK e faz sua própria autorização.
+`npm start` executa dist/server.js. `createApp(deps)` não abre porta nem inicializa
+serviços reais; recebe auth, db, proofStorage e logger. O servidor monta os
+adaptadores. Não configurar hosts de emuladores em produção.
 
-## Rotas
+## Autorização e rotas
 
-| Método e caminho | Entrada / comportamento |
+Token Firebase verificado com custom claims tenantId e role
+(admin/operator/driver). Sem tenant por header nem papel padrão. Documentos em
+tenants/{tenantId}/deliveries/{chave44}. Motorista só acessa a própria entrega;
+operator/admin importam e conferem. Security Rules deny-all para clientes.
+
+| Método e caminho | Contrato |
 | --- | --- |
-| `GET /healthz` | Liveness sem autenticação, Firestore ou Storage |
-| `GET /readyz` | Leitura de `_system/readiness`; 200 ou 503, timeout de 2 s |
-| `GET /api/v1/entregas` | Lista por tenant/motorista; `limit`, `cursor`, `status`; resposta `itens` e `proximoCursor` |
-| `POST /api/v1/entregas/xml` | JSON `xmlContent`, `driverId` opcional; operador/admin |
-| `GET /api/v1/entregas/{chave44}` | Leitura autorizada; URL temporária quando há comprovante |
-| `POST /api/v1/entregas/{chave44}/comprovantes` | Multipart `foto`, `recebedor`, `dataHora`; motorista/admin; header `Idempotency-Key` |
-| `POST /api/v1/entregas/{chave44}/conferencia` | JSON `decisao: APROVAR ou REJEITAR`, `motivo` obrigatório na rejeição; operador/admin |
+| GET /healthz | Liveness sem dependências; revision com SHA Render |
+| GET /readyz | Leitura leve Firestore, timeout de 2 s; 200/503 |
+| GET /api/v1/entregas | itens/proximoCursor; filtros limit/cursor/status |
+| POST /api/v1/entregas/xml | JSON xmlContent, driverId opcional; 201/409 |
+| GET /api/v1/entregas/:id | Detalhe autorizado e link temporário da foto |
+| POST /api/v1/entregas/:id/comprovantes | Multipart foto/recebedor/dataHora; Idempotency-Key |
+| POST /api/v1/entregas/:id/conferencia | decisao APROVAR/REJEITAR; motivo na rejeição |
 
-Os aliases `/api/v1/health`, `/api/v1/healthz` e `/api/v1/readyz` foram mantidos.
-As rotas anteriores `/api/v1/deliveries/xml`, `GET /api/v1/deliveries/{id}`,
-`POST /api/v1/deliveries/{id}/proof` (campo `file`, `recebedorNome`,
-`dataHoraEntrega`) e `PATCH /api/v1/deliveries/{id}/check` (booleano `aprovado`,
-`motivoRejeicao`) também funcionam. `{id}` agora é sempre a chave de 44 dígitos.
+Aliases ingleses preservados: /deliveries, /deliveries/xml, /deliveries/:id,
+/deliveries/:id/proof (file/recebedorNome/dataHoraEntrega) e PATCH
+/deliveries/:id/check (aprovado/motivoRejeicao), todos sob /api/v1.
+Aliases de saúde /api/v1/health, /api/v1/healthz e /api/v1/readyz preservados.
 
-## Validações e dados
+## Validações e comprovantes
 
-O limite de XML foi definido como 1 MiB (1.048.576 bytes UTF-8), sem o envelope
-JSON. A aplicação verifica tamanho, rejeita DOCTYPE/ENTITY antes do parser,
-valida sintaxe e estrutura NF-e versão 4.00 e verifica chave/módulo 11 e `ide/cDV`.
-São aceitos envelopes `NFe` e `nfeProc`. Isso não é validação completa de XSD nem
-verificação de assinatura fiscal. A importação duplicada retorna 409.
+XML até 1 MiB em bytes UTF-8; bloqueia DOCTYPE/ENTITY antes do parser; valida
+NF-e 4.00, chave de 44 dígitos, módulo 11, cDV e campos obrigatórios, incluindo
+emitente. Isso não é validação completa XSD nem de assinatura fiscal. Não há CT-e.
 
-O comprovante aceita JPEG, PNG, WebP ou PDF legado, até 300.000 bytes (300 KB), com conferência da assinatura
-inicial do arquivo além do MIME. A data/hora deve ser ISO com fuso. O documento
-do recebedor é ignorado e não é persistido: ficam apenas o nome e os metadados
-operacionais do comprovante. Registros antigos não são migrados automaticamente.
+Comprovantes JPEG/PNG/WebP/PDF legado até 300000 bytes; confere MIME e assinatura
+inicial. Nome e data/hora ISO com fuso obrigatórios. Documento do recebedor não
+é persistido. Foto válida altera PENDENTE/REJEITADO para COMPROVADO; aprovação
+gera CONFERIDO; rejeição com motivo gera REJEITADO. Novo envio limpa conferência.
 
-A conferência só aceita entregas COMPROVADO. Aprovar produz CONFERIDO; rejeitar
-produz REJEITADO. PENDENTE e REJEITADO permitem envio de comprovante. Novo envio
-limpa a conferência anterior e passa a COMPROVADO.
+Idempotency-Key aceita 1 a 128 caracteres alfanuméricos, _ ou -. Fingerprint
+vincula usuário, entrega, campos e bytes. Mesma chave com outro conteúdo retorna
+409. Duas transações Firestore reservam/finalizam a operação; upload fica fora
+dos callbacks que podem repetir. A reserva dura 60 s e evita uploads concorrentes.
+Supabase usa upsert=false; o emulador usa ifGenerationMatch=0. Retry após falha
+reutiliza o arquivo determinístico sem sobrescrever.
 
-## Idempotência e Storage
-
-O registro fica em `tenants/{tenantId}/idempotency/{key}`. A chave aceita de 1 a
-128 caracteres alfanuméricos, `_` e `-`. Um hash vincula entrega, usuário, nome,
-data/hora, MIME e conteúdo do arquivo à chave. Outra operação com a mesma chave
-retorna 409; uma operação finalizada devolve o resultado com nova URL assinada.
-
-A primeira transação reserva a operação e a entrega por 60 s. O upload acontece
-fora da transação, em caminho determinístico, usando `ifGenerationMatch: 0` para
-não sobrescrever objetos. A segunda transação verifica o dono da reserva e
-finaliza entrega e idempotência juntas. Uma chamada em andamento retorna 409.
-Depois de uma falha, repita a mesma requisição e chave após a reserva expirar.
-Se o arquivo já foi salvo, a repetição reutiliza o objeto sem sobrescrevê-lo.
-
-Firestore e Storage não compartilham uma transação atômica. Se uma operação
-for abandonada após salvar o arquivo, pode sobrar um objeto sem referência;
-uma rotina de reconciliação/limpeza pode ser adicionada posteriormente.
-
-Somente o caminho privado do objeto é persistido. As URLs de leitura são V4,
-válidas por 15 minutos. O ambiente real precisa de uma identidade com permissão
-para assinar URLs e acessar o bucket. O emulador de Storage sozinho não fornece
-credenciais de assinatura; os testes locais substituem a assinatura.
+Só o caminho privado é persistido; o cliente recebe link de até 15 min. Foto
+removida aparece com arquivoDisponivel=false e URL/expiração nulas. Retry de
+operação concluída cujo arquivo expirou retorna 410, sem recriar dados.
+Retenção de 60 dias: `npm run cleanup:proofs` simula; `-- --apply` aplica.
+Agendamento e permissões reais precisam ser configurados conforme o runbook.
 
 ## Evidência e limites
 
-Os testes exercitam as rotas Express com Supertest e dependências substituídas,
-incluindo uma implementação de transações em memória com rollback e serialização.
-Eles não substituem a execução contra emuladores ou serviços reais do Firebase,
-nem validam IAM, contenção distribuída ou o conteúdo visual dos comprovantes.
+Lint/build e 99 testes passaram com Auth/Firestore/Storage emulados em
+06/11/2026; um todo anterior sobre extensão de arquivo permanece. Quatro testes
+Node cobrem smoke, publicação, configuração e retenção. O adaptador Supabase
+usa SDK real com HTTP simulado; não houve verificação contra um bucket real.
 
-O CI preserva lint/build, audit, gitleaks e Compose; testa Auth/Firestore/Storage
-emulados e o smoke do backend. A suíte de integração não usa doubles para
-autenticação, banco ou upload; substitui apenas a assinatura de URL.
-
-## CP3: operação e publicação
-
-`npm run test:emulator` inicia os três emuladores com CLI fixada. `npm run
-test:smoke` valida o verificador de deploy, e `npm run smoke -- URL SHA` testa
-health/readiness da revisão candidata. `npm run verify:published` executa
-autorização read-only com usuários sintéticos configurados por variáveis.
-
-A aplicação usa ADC/conta de execução, sem FIREBASE_SERVICE_ACCOUNT_JSON;
-projeto e bucket são obrigatórios na produção. O container de produção está
-em `backend/Dockerfile`, usa PORT/0.0.0.0 e executa código compilado.
-
-Logs incluem severity, requestId, route, status, durationMs e tenantId verificado.
-Configure CORS_ALLOWED_ORIGINS com as origens autorizadas separadas por vírgula.
-Health/readiness dispensam token e os aliases /api/v1 continuam funcionando.
-
-Arquivo removido pelo lifecycle aparece no detalhe com arquivoDisponivel=false
-e URL/expiração nulas; retry concluído recebe 410, sem ressuscitar a foto.
-
-Workflows usam WIF e promovem somente após smoke da candidata; dependem de
-variáveis, recursos e permissões definidos pelo DevOps. Não houve deploy nem
-configuração de IAM/faturamento por simplesmente editar o repositório.
-Consultar `docs/runbooks/cp3-backend.md` na raiz para variáveis, limites,
-evidências, retenção, pendências do frontend e rollback.
-
-A branch foi iniciada na main. Isso não remove XMLs presentes no histórico da
-própria main; nenhum histórico foi reescrito.
+CI preserva audit/gitleaks/Compose. Não houve push nem deploy nesta revisão.
+O frontend ainda precisa mapear o contrato conforme o runbook. Logs contêm
+somente campos operacionais, e CORS exige origens explicitamente autorizadas.

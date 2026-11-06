@@ -1,11 +1,11 @@
-name: CP3 - production
+name: Render e Hosting
 on:
   push:
     branches: [main]
 permissions:
   contents: read
 concurrency:
-  group: cp3-production
+  group: production-deploy
   cancel-in-progress: false
 jobs:
   checks:
@@ -13,98 +13,46 @@ jobs:
   deploy-api:
     needs: checks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-      STORAGE_BUCKET: ${{ vars.STORAGE_BUCKET }}
-      RUNTIME_SERVICE_ACCOUNT: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
-      ARTIFACT_REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
-      CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
-      VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Check required deployment variables
-        shell: bash
-        run: |
-          for name in GCP_PROJECT_ID GCP_REGION CLOUD_RUN_SERVICE STORAGE_BUCKET RUNTIME_SERVICE_ACCOUNT ARTIFACT_REPOSITORY CORS_ALLOWED_ORIGINS VITE_FIREBASE_API_KEY; do
-            test -n "${!name}" || { echo "Configure repository variable $name"; exit 1; }
-          done
-      - uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v2
-      - name: Build and push immutable image in GitHub Actions
-        shell: bash
-        run: |
-          gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
-          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REPOSITORY/entregaprova-api:$GITHUB_SHA"
-          docker build --tag "$IMAGE" backend
-          docker push "$IMAGE"
-          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
-      - name: Publish versioned Firestore indexes
-        run: npx --yes firebase-tools@13.35.1 deploy --only firestore:indexes --project "$GCP_PROJECT_ID" --non-interactive
-      - name: Deploy candidate without production traffic
-        shell: bash
-        run: |
-          node --input-type=module -e '
-            import {writeFileSync} from "node:fs";
-            const {GCP_PROJECT_ID,STORAGE_BUCKET,CORS_ALLOWED_ORIGINS,GITHUB_SHA,RUNNER_TEMP}=process.env;
-            writeFileSync(`${RUNNER_TEMP}/runtime.json`,JSON.stringify({NODE_ENV:"production",GCP_PROJECT_ID,STORAGE_BUCKET,CORS_ALLOWED_ORIGINS,CORS_HOSTING_SITE:GCP_PROJECT_ID,APP_REVISION:GITHUB_SHA}));'
-          SUFFIX="sha-${GITHUB_SHA:0:12}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          gcloud run deploy "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
-            --image "$IMAGE" --service-account "$RUNTIME_SERVICE_ACCOUNT" \
-            --port 8080 --min-instances 0 --max-instances 3 --concurrency 60 --memory 512Mi \
-            --env-vars-file "$RUNNER_TEMP/runtime.json" --revision-suffix "$SUFFIX" \
-            --startup-probe httpGet.path=/healthz,httpGet.port=8080,periodSeconds=10,timeoutSeconds=2,failureThreshold=12 \
-            --liveness-probe httpGet.path=/healthz,httpGet.port=8080,periodSeconds=30,timeoutSeconds=2,failureThreshold=3 \
-            --no-traffic --tag candidate --allow-unauthenticated --quiet
-          gcloud run services describe "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format=json > "$RUNNER_TEMP/service.json"
-          node --input-type=module -e '
-            import {readFileSync,appendFileSync} from "node:fs";
-            const service=JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/service.json`,"utf8"));
-            const candidate=service.status.traffic.find(item=>item.tag==="candidate");
-            if(!candidate?.url||!candidate.revisionName)throw Error("Candidate URL/revision missing");
-            appendFileSync(process.env.GITHUB_ENV,`CANDIDATE_URL=${candidate.url}\nCANDIDATE_REVISION=${candidate.revisionName}\n`);'
-      - name: Smoke candidate and verify commit SHA
-        run: node backend/scripts/smoke.mjs "$CANDIDATE_URL" "$GITHUB_SHA"
-      - name: Promote only the verified revision
-        run: gcloud run services update-traffic "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --to-revisions "$CANDIDATE_REVISION=100" --quiet
+      - name: Publicar o SHA aprovado no Render e verificar a API
+        run: node backend/scripts/deploy-render.mjs
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          TARGET_API_URL: ${{ vars.API_BASE_URL }}
+          EXPECTED_API_REVISION: ${{ github.sha }}
   deploy-hosting:
     needs: deploy-api
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      checks: write
     env:
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      VITE_API_URL: ${{ vars.API_BASE_URL }}
+      VITE_API_PREFIX: /api/v1
+      VITE_USE_EMULATORS: "false"
+      VITE_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: entregaprova-app/package-lock.json
+      - name: Conferir configuração pública do frontend
+        run: node infra/deploy/check-web-config.mjs
       - run: npm ci
         working-directory: entregaprova-app
       - run: npm run build
         working-directory: entregaprova-app
-        env:
-          VITE_API_URL: ""
-          VITE_API_PREFIX: /api/v1
-          VITE_USE_EMULATORS: "false"
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-      - uses: google-github-actions/auth@v3
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-      - run: node infra/cp3/render-hosting.mjs
-      - run: npx --yes firebase-tools@13.35.1 deploy --only hosting --config .firebase/cp3-hosting.json --project "$GCP_PROJECT_ID" --non-interactive
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ENTREGAPROVA }}
+          channelId: live
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
