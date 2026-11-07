@@ -54,12 +54,12 @@ describe("US-01 - importação de XML de NF-e", () => {
     expect(erroAoImportar(xml().replace("</ide>", "")).status).toBe(422);
   });
 
-    // BUG-002: XXE rejeitado com 422; a especificação (US-01 CA3) pede 400
+  // BUG-002: XXE rejeitado com 422; a especificação (US-01 CA3) pede 400
   it.fails("CT-07: rejeita XML com entidade externa (XXE) com HTTP 400", () => {
     const erro = erroAoImportar(readFileSync(XML_XXE, "utf8"));
 
-    expect(erro.status).toBe(400);
     expect(erro.message).not.toContain("root:");
+    expect(erro.status).toBe(400);
   });
 
   it("CT-08: entrega importada recebe o status inicial PENDENTE", async () => {

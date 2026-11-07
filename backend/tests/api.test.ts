@@ -8,6 +8,8 @@ const QUINZE_MINUTOS_MS = 15 * 60 * 1000;
 const DOCUMENTO_PESSOAL = "DADO-QUE-NAO-DEVE-SER-SALVO";
 
 const caminhoIdempotencia = (idem: string, tenant = "tenant-a") => `tenants/${tenant}/idempotency/${idem}`;
+const KB_300 = 300 * 1024;
+const fotoComBytes = (bytes: number) => Buffer.concat([jpeg, Buffer.alloc(bytes - jpeg.length)]);
 
 let f: ReturnType<typeof fixture>;
 
@@ -179,6 +181,20 @@ describe("Infraestrutura - health e readiness", () => {
 describe("US-02 - envio de comprovante", () => {
   beforeEach(() => {
     f.seed();
+  });
+
+  it("CT-17.1: aceita foto de exatamente 300 KB", async () => {
+    const res = await enviarComprovante({ idem: "limite-300kb", foto: fotoComBytes(KB_300) });
+
+    expect(res.status).toBe(200);
+  });
+
+  // BUG-003: o multer aceita até 5 MB; o Caderno define 300 KB
+  it.fails("CT-17.2: recusa foto com 1 byte acima de 300 KB (413)", async () => {
+    const res = await enviarComprovante({ idem: "acima-300kb", foto: fotoComBytes(KB_300 + 1) });
+
+    expect(res.status).toBe(413);
+    expect(f.save).not.toHaveBeenCalled();
   });
 
   it("CT-37.1: não salva o documento pessoal do recebedor", async () => {
@@ -364,4 +380,23 @@ describe("Segurança e compatibilidade da API", () => {
     expect(envio.status).toBe(200);
     expect(conferencia.status).toBe(200);
   });
+});
+
+describe("US-06 - listagem de entregas", () => {
+  it.todo("CT-14: operador lista as entregas do tenant, paginadas por cursor");
+  it.todo("CT-15: motorista vê só as entregas atribuídas a ele");
+  it.todo("CT-16: sem entregas, devolve 200 com lista vazia");
+});
+
+describe("Segurança - CORS", () => {
+  // BUG-004: o cors() está sem lista de origens e libera qualquer uma.
+  it.fails("CT-18: não libera origem fora da lista", async () => {
+    const res = await request(f.app)
+      .get("/healthz")
+      .set("Origin", "https://origem-nao-autorizada.example");
+
+    expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+
+  it.todo("CT-19: libera as origens do Firebase Hosting e dos emuladores");
 });
