@@ -1,65 +1,135 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { fixture, key, path } from "../helpers.js";
 
-describe("Isolamento nas rotas reais", () => {
-  let f: ReturnType<typeof fixture>;
-  beforeEach(() => { f = fixture(); f.seed(); f.seed("tenant-b", "driver-b"); });
+const entrega = `/api/v1/entregas/${key}`;
 
-  it("exige token válido", async () => {
-    for (const token of ["", "invalid"]) {
-      const req = request(f.app).get(`/api/v1/entregas/${key}`);
-      if (token) req.auth(token, { type: "bearer" });
-      expect((await req).status).toBe(401);
-    }
+describe("Autorização e isolamento - entregas", () => {
+  let f: ReturnType<typeof fixture>;
+
+  const comToken = (req: request.Test, token?: string) =>
+    token ? req.auth(token, { type: "bearer" }) : req;
+
+  const get = (url: string, token?: string) =>
+    comToken(request(f.app).get(url), token);
+
+  const post = (url: string, token?: string, body: object = {}) =>
+    comToken(request(f.app).post(url), token).send(body);
+
+  const statusDaEntrega = () => f.documents.get(path())?.status;
+
+  beforeEach(() => {
+    f = fixture();
+    f.seed();
+    f.users.operatorB = { uid: "operator-b", tenantId: "tenant-b", role: "operator" };
   });
-  it.each([
-    ["operator", 200], ["driver", 200], ["otherDriver", 403],
-  ])("leitura: %s => %i", async (token, status) => {
-    expect((await request(f.app).get(`/api/v1/entregas/${key}`).auth(token, { type: "bearer" })).status).toBe(status);
+
+  describe("CT-20: sem token, token inválido ou vencido retorna 401", () => {
+    it("CT-20.1: GET /entregas/{id} sem token", async () => {
+      expect((await get(entrega)).status).toBe(401);
+    });
+
+    it("CT-20.2: GET /entregas/{id} com token vencido", async () => {
+      vi.mocked(f.deps.auth.verifyIdToken).mockRejectedValueOnce(
+        Object.assign(new Error("Firebase ID token has expired"), { code: "auth/id-token-expired" }),
+      );
+
+      expect((await get(entrega, "token-vencido")).status).toBe(401);
+    });
+
+    it("CT-20.3: POST /comprovantes sem token", async () => {
+      expect((await post(`${entrega}/comprovantes`)).status).toBe(401);
+    });
+
+    it("CT-20.4: POST /conferencia sem token", async () => {
+      expect((await post(`${entrega}/conferencia`)).status).toBe(401);
+    });
+
+    it("CT-20.5: GET /entregas/{id} com token não reconhecido", async () => {
+      expect((await get(entrega, "invalid")).status).toBe(401);
+    });
   });
-  it("não lê o mesmo ID de outro tenant e ignora header", async () => {
-    f.documents.delete(path("tenant-b"));
-    const res = await request(f.app).get(`/api/v1/entregas/${key}`)
-      .auth("otherTenant", { type: "bearer" }).set("x-tenant-id", "tenant-a");
-    expect(res.status).toBe(404);
+
+  describe("CT-21: papel ou dono errado retorna 403 e não altera a entrega", () => {
+    it("CT-21.1: motorista não lê entrega de outro motorista", async () => {
+      expect((await get(entrega, "otherDriver")).status).toBe(403);
+    });
+
+    it("CT-21.2: motorista não envia comprovante de outro motorista", async () => {
+      expect((await post(`${entrega}/comprovantes`, "otherDriver")).status).toBe(403);
+      expect(f.save).not.toHaveBeenCalled();
+      expect(statusDaEntrega()).toBe("PENDENTE");
+    });
+
+    it("CT-21.3: motorista não confere entrega de outro motorista", async () => {
+      expect((await post(`${entrega}/conferencia`, "otherDriver", { decisao: "APROVAR" })).status).toBe(403);
+      expect(statusDaEntrega()).toBe("PENDENTE");
+    });
+
+    it("CT-21.4: motorista não confere nem a própria entrega", async () => {
+      expect((await post(`${entrega}/conferencia`, "driver", { decisao: "APROVAR" })).status).toBe(403);
+      expect(statusDaEntrega()).toBe("PENDENTE");
+    });
+
+    it("CT-21.5: operador não envia comprovante", async () => {
+      expect((await post(`${entrega}/comprovantes`, "operator")).status).toBe(403);
+      expect(f.save).not.toHaveBeenCalled();
+    });
+
+    it("CT-21.6: motorista não importa XML", async () => {
+      const res = await post("/api/v1/entregas/xml", "driver", { xmlContent: "<NFe/>" });
+
+      expect(res.status).toBe(403);
+      expect(f.documents.size).toBe(1);
+    });
   });
-  it.each([
-    { uid: "u", role: "driver" },
-    { uid: "u", tenantId: "tenant-a" },
-    { uid: "u", tenantId: "tenant-a", role: "owner" },
-    { uid: "u", tenantId: "../tenant-a", role: "admin" },
-  ])("recusa claims ausentes ou inválidas: %j", async claims => {
-    f.users.bad = claims;
-    const res = await request(f.app).get(`/api/v1/entregas/${key}`)
-      .auth("bad", { type: "bearer" }).set("x-tenant-id", "tenant-a");
-    expect(res.status).toBe(403);
+
+  describe("CT-22: outro tenant retorna 404", () => {
+    it("CT-22.1: motorista de outro tenant não lê a entrega", async () => {
+      expect((await get(entrega, "otherTenant")).status).toBe(404);
+    });
+
+    it("CT-22.2: motorista de outro tenant não envia comprovante", async () => {
+      expect((await post(`${entrega}/comprovantes`, "otherTenant")).status).toBe(404);
+      expect(f.save).not.toHaveBeenCalled();
+      expect(statusDaEntrega()).toBe("PENDENTE");
+    });
+
+    it("CT-22.3: operador de outro tenant não confere a entrega", async () => {
+      expect((await post(`${entrega}/conferencia`, "operatorB", { decisao: "APROVAR" })).status).toBe(404);
+      expect(statusDaEntrega()).toBe("PENDENTE");
+    });
+
+    it("CT-22.4: operador lê entrega do próprio tenant", async () => {
+      expect((await get(entrega, "operator")).status).toBe(200);
+    });
+
+    it("CT-22.5: motorista lê a própria entrega", async () => {
+      expect((await get(entrega, "driver")).status).toBe(200);
+    });
   });
-  it("bloqueia comprovante de outro motorista antes do upload", async () => {
-    const res = await request(f.app).post(`/api/v1/entregas/${key}/comprovantes`)
-      .auth("otherDriver", { type: "bearer" });
-    expect(res.status).toBe(403);
-    expect(f.save).not.toHaveBeenCalled();
-    expect(f.documents.get(path())?.status).toBe("PENDENTE");
-  });
-  it("bloqueia comprovante de outro tenant com 404", async () => {
-    f.documents.delete(path("tenant-b"));
-    const res = await request(f.app).post(`/api/v1/entregas/${key}/comprovantes`)
-      .auth("otherTenant", { type: "bearer" });
-    expect(res.status).toBe(404);
-    expect(f.documents.get(path())?.status).toBe("PENDENTE");
-  });
-  it("motorista não pode conferir", async () => {
-    const res = await request(f.app).post(`/api/v1/entregas/${key}/conferencia`)
-      .auth("driver", { type: "bearer" }).send({ decisao: "APROVAR" });
-    expect(res.status).toBe(403);
-  });
-  it("operador de outro tenant não pode conferir", async () => {
-    f.users.operatorB = { uid: "ob", tenantId: "tenant-b", role: "operator" };
-    f.documents.delete(path("tenant-b"));
-    const res = await request(f.app).post(`/api/v1/entregas/${key}/conferencia`)
-      .auth("operatorB", { type: "bearer" }).send({ decisao: "APROVAR" });
-    expect(res.status).toBe(404);
-    expect(f.documents.get(path())?.status).toBe("PENDENTE");
+
+  describe("US-06 - tenant e claims vêm só do token", () => {
+    it("CT-47: ignora o header x-tenant-id e consulta apenas o tenant do token (404)", async () => {
+      const res = await get(entrega, "otherTenant").set("x-tenant-id", "tenant-a");
+
+      expect(res.status).toBe(404);
+      expect(f.read).toHaveBeenCalledWith({ path: path("tenant-b") });
+      expect(f.read).not.toHaveBeenCalledWith({ path: path("tenant-a") });
+    });
+
+    it.each([
+      { id: "CT-48.1", caso: "sem tenantId", claims: { uid: "u", role: "driver" } },
+      { id: "CT-48.2", caso: "sem role", claims: { uid: "u", tenantId: "tenant-a" } },
+      { id: "CT-48.3", caso: "role fora da lista", claims: { uid: "u", tenantId: "tenant-a", role: "owner" } },
+      { id: "CT-48.4", caso: "tenantId com path traversal", claims: { uid: "u", tenantId: "../tenant-a", role: "admin" } },
+    ])("$id: recusa claims inválidas ($caso) com 403, sem consultar o banco", async ({ claims }) => {
+      f.users.bad = claims;
+
+      const res = await get(entrega, "bad").set("x-tenant-id", "tenant-a");
+
+      expect(res.status).toBe(403);
+      expect(f.read).not.toHaveBeenCalled();
+    });
   });
 });
