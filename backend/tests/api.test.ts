@@ -8,7 +8,7 @@ const QUINZE_MINUTOS_MS = 15 * 60 * 1000;
 const DOCUMENTO_PESSOAL = "DADO-QUE-NAO-DEVE-SER-SALVO";
 
 const caminhoIdempotencia = (idem: string, tenant = "tenant-a") => `tenants/${tenant}/idempotency/${idem}`;
-const KB_300 = 300 * 1024;
+const KB_300 = 300_000;
 const fotoComBytes = (bytes: number) => Buffer.concat([jpeg, Buffer.alloc(bytes - jpeg.length)]);
 
 let f: ReturnType<typeof fixture>;
@@ -188,21 +188,24 @@ describe("US-02 - envio de comprovante", () => {
     f.seed();
   });
 
-  it("CT-17.1: aceita foto de exatamente 300 KB", async () => {
-    const res = await enviarComprovante({ idem: "limite-300kb", foto: fotoComBytes(KB_300) });
+    it("CT-17.1: aceita foto de exatamente 300 KB (300.000 bytes)", async () => {
+    const res = await enviarComprovante({
+      idem: "limite-300kb",
+      foto: fotoComBytes(KB_300),
+    });
 
     expect(res.status).toBe(200);
   });
 
   it("CT-17.2: recusa foto com 1 byte acima de 300 KB (413)", async () => {
-  const res = await enviarComprovante({
-    idem: "acima-300kb",
-    foto: fotoComBytes(KB_300 + 1),
-  });
+    const res = await enviarComprovante({
+      idem: "acima-300kb",
+      foto: fotoComBytes(KB_300 + 1),
+    });
 
-  expect(res.status).toBe(200);
-  expect(f.save).not.toHaveBeenCalled();
-});
+    expect(res.status).toBe(413);
+    expect(f.save).not.toHaveBeenCalled();
+  });
 
   it("CT-37.1: não salva o documento pessoal do recebedor", async () => {
     expect((await enviarComprovante()).status).toBe(200);
