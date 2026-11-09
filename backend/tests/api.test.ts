@@ -139,7 +139,7 @@ describe("API de entregas", () => {
       .auth("operator", { type: "bearer" }).send({ xmlContent: xml(), driverId: "driver-a" });
     expect((await send()).status).toBe(201);
     expect([...f.documents.keys()]).toEqual([path()]);
-    expect((await importar()).status).toBe(409);
+    expect((await send()).status).toBe(409);
   });
 
   it("CT-33: rejeita XML grande (413) e não grava nada", async () => {
