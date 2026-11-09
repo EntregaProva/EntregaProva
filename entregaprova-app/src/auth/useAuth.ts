@@ -3,6 +3,7 @@ import type { User } from "firebase/auth";
 
 export interface AuthContextValue {
   user: User | null;
+  role: "admin" | "operator" | "driver" | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;

@@ -5,7 +5,7 @@ const MB = 1024 * 1024;
 // Devolve a mensagem de erro, ou null se o arquivo está ok.
 export function validarXml(file: File): string | null {
   if (!file.name.toLowerCase().endsWith(".xml")) {
-    return "Poxa! Seu arquivo não foi aceito :( Envie um arquivo .xml (NF-e ou CT-e).";
+    return "Poxa! Seu arquivo não foi aceito :( Envie um arquivo .xml de NF-e 4.00.";
   }
   if (file.size === 0) return "O arquivo está vazio.";
   if (file.size > MAX_XML_MB * MB) {

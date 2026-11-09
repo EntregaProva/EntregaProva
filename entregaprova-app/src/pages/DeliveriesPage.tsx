@@ -26,7 +26,7 @@ export default function DeliveriesPage({ onNavigate }: { onNavigate: (view: View
       {!loading && !error && data && data.length === 0 && (
         <StateMessage
           kind="empty"
-          message="Nenhuma entrega ainda. Importe um XML de NF-e ou CT-e para criar a primeira."
+          message="Nenhuma entrega ainda. Importe um XML de NF-e 4.00 para criar a primeira."
           actionLabel="Importar XML"
           onAction={() => onNavigate("importar")}
         />

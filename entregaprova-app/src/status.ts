@@ -6,12 +6,12 @@ export interface StatusInfo {
 }
 
 const STATUS: Record<string, StatusInfo> = {
-  pendente: { label: "Pendente", icon: "◷", css: "warning" },
-  capturada: { label: "Aguardando conferência", icon: "◔", css: "warning" },
-  conferida: { label: "Conferida", icon: "✓", css: "success" },
-  divergente: { label: "Diferente", icon: "!", css: "danger-status" },
+  PENDENTE: { label: "Pendente", icon: "◷", css: "warning" },
+  COMPROVADO: { label: "Aguardando conferência", icon: "◔", css: "warning" },
+  CONFERIDO: { label: "Conferida", icon: "✓", css: "success" },
+  REJEITADO: { label: "Rejeitada", icon: "!", css: "danger-status" },
 };
 
 export function infoDoStatus(status: string): StatusInfo {
-  return STATUS[status] ?? { label: status, icon: "•", css: "warning" };
+  return STATUS[status.toUpperCase()] ?? { label: status, icon: "•", css: "warning" };
 }

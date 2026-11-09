@@ -79,6 +79,10 @@ export default function ReviewPage({ onNavigate }: { onNavigate: (view: View) =>
             <article className="review-side">
               <h2>Foto do comprovante</h2>
               <img className="review-photo" src={item.proof.photoUrl} alt={`Comprovante da NF-e ${item.invoiceNumber}`} />
+              {item.proof.expiresAt && <p className="hint">Link temporário válido até {formatarDataHora(item.proof.expiresAt)}.</p>}
+              <button type="button" className="button secondary" disabled={loading || saving} onClick={() => void reload()}>
+                Atualizar comprovante
+              </button>
               <dl className="review-facts">
                 <div><dt>Recebido por</dt><dd>{item.proof.receiverName}</dd></div>
                 <div><dt>Capturado em</dt><dd>{formatarDataHora(item.proof.capturedAt)}</dd></div>
