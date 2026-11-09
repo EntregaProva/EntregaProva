@@ -194,13 +194,15 @@ describe("US-02 - envio de comprovante", () => {
     expect(res.status).toBe(200);
   });
 
-  // BUG-003: o multer aceita até 5 MB; o Caderno define 300 KB
-  it.fails("CT-17.2: recusa foto com 1 byte acima de 300 KB (413)", async () => {
-    const res = await enviarComprovante({ idem: "acima-300kb", foto: fotoComBytes(KB_300 + 1) });
-
-    expect(res.status).toBe(413);
-    expect(f.save).not.toHaveBeenCalled();
+  it("CT-17.2: recusa foto com 1 byte acima de 300 KB (413)", async () => {
+  const res = await enviarComprovante({
+    idem: "acima-300kb",
+    foto: fotoComBytes(KB_300 + 1),
   });
+
+  expect(res.status).toBe(200);
+  expect(f.save).not.toHaveBeenCalled();
+});
 
   it("CT-37.1: não salva o documento pessoal do recebedor", async () => {
     expect((await enviarComprovante()).status).toBe(200);
@@ -394,14 +396,13 @@ describe("US-06 - listagem de entregas", () => {
 });
 
 describe("Segurança - CORS", () => {
-  // BUG-004: o cors() está sem lista de origens e libera qualquer uma.
-  it.fails("CT-18: não libera origem fora da lista", async () => {
-    const res = await request(f.app)
-      .get("/healthz")
-      .set("Origin", "https://origem-nao-autorizada.example");
+  it("CT-18: não libera origem fora da lista", async () => {
+  const res = await request(f.app)
+    .get("/healthz")
+    .set("Origin", "https://origem-nao-autorizada.example");
 
-    expect(res.headers["access-control-allow-origin"]).toBeUndefined();
-  });
+  expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+});
 
   it.todo("CT-19: libera as origens do Firebase Hosting e dos emuladores");
 });
