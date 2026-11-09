@@ -16,6 +16,7 @@ jobs:
           VITE_API_URL: https://entregaprova.onrender.com
           VITE_USE_EMULATORS: "false"
           VITE_FIREBASE_PROJECT_ID: entregaprova
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: entregaprova.firebaseapp.com
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
