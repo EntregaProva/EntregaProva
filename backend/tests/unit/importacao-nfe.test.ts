@@ -28,15 +28,25 @@ async function importarPelaApi(conteudo: string) {
 
 describe("US-01 - importação de XML de NF-e", () => {
   it("CT-01: aceita XML válido enviado pela API (201)", async () => {
-    const { res } = await importarPelaApi(xml());
+    const { f, res } = await importarPelaApi(xml());
 
     expect(res.status).toBe(201);
+    expect(res.body.emitente).toBe("EMITENTE SINTETICO");
+    expect(f.documents.get(path())?.emitente).toBe("EMITENTE SINTETICO");
   });
 
   it.todo("CT-02: rejeita arquivo com extensão diferente de .xml (o backend só recebe o conteúdo, sem checar extensão)");
 
   it("CT-03: aceita NF-e com versão 4.00", () => {
     expect(parseNFeXML(xml("4.00")).chave).toBe(key);
+  });
+
+  it("massa do BUG-001 tem período e DV coerentes", () => {
+    const conteudo = readFileSync(resolve(__dirname, "../../../testes/nfe-valida-400.xml"), "utf8");
+    const nota = parseNFeXML(conteudo);
+    expect(nota.chave.slice(2, 6)).toBe("2610");
+    expect(nota.chave[43]).toBe("0");
+    expect(nota.emitente).toBe("EMPRESA MODELO REMETENTE LTDA");
   });
 
   it("CT-04: rejeita NF-e com versão não suportada", () => {
@@ -48,14 +58,38 @@ describe("US-01 - importação de XML de NF-e", () => {
 
     expect(nota.numero).toBe("1");
     expect(nota.chave).toBe(key);
+    expect(nota.emitente).toBe("EMITENTE SINTETICO");
+    expect(nota.destinatario).toBe("DESTINATARIO SINTETICO");
+  });
+
+  it("normaliza espaços nas extremidades do nome do emitente", () => {
+    const conteudo = xml().replace(
+      "<xNome>EMITENTE SINTETICO</xNome>",
+      "<xNome>  EMITENTE SINTETICO  </xNome>",
+    );
+
+    expect(parseNFeXML(conteudo).emitente).toBe("EMITENTE SINTETICO");
+  });
+
+  it.each([
+    "",
+    "<emit><xNome></xNome></emit>",
+    "<emit><xNome>   </xNome></emit>",
+    "<emit><xNome><nome>EMITENTE SINTETICO</nome></xNome></emit>",
+  ])("recusa emitente ausente, vazio ou não textual sem gravar: %s", async emit => {
+    const conteudo = xml().replace(/<emit>.*?<\/emit>/, emit);
+    const { f, res } = await importarPelaApi(conteudo);
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe("Emitente da NF-e obrigatório");
+    expect(f.documents.size).toBe(0);
   });
 
   it("CT-06: rejeita XML malformado", () => {
     expect(erroAoImportar(xml().replace("</ide>", "")).status).toBe(422);
   });
 
-  // BUG-002: XXE rejeitado com 422; a especificação (US-01 CA3) pede 400
-  it.fails("CT-07: rejeita XML com entidade externa (XXE) com HTTP 400", () => {
+  it("CT-07: rejeita XML com entidade externa (XXE) com HTTP 400", () => {
     const erro = erroAoImportar(readFileSync(XML_XXE, "utf8"));
 
     expect(erro.message).not.toContain("root:");

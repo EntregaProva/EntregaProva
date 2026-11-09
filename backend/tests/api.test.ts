@@ -124,15 +124,20 @@ describe("US-01 - parser de XML", () => {
   });
 });
 
-describe("US-01 - importação pela API", () => {
-  it("CT-32: importa em tenants/{tenant}/deliveries/{chave44} e bloqueia duplicata (409)", async () => {
-    const importar = () =>
-      request(f.app)
-        .post("/api/v1/deliveries/xml")
-        .auth("operator", { type: "bearer" })
-        .send({ xmlContent: xml(), driverId: "driver-a" });
+describe("API de entregas", () => {
+  let f: ReturnType<typeof fixture>;
+  beforeEach(() => { f = fixture(); });
+  const upload = (idem = "upload-1", name = "RECEBEDOR SINTETICO", bytes = jpeg, token = "driver") =>
+    request(f.app).post(`/api/v1/entregas/${key}/comprovantes`)
+      .auth(token, { type: "bearer" }).set("Idempotency-Key", idem)
+      .field("recebedor", name).field("dataHora", "2026-10-31T10:00:00-03:00")
+      .field("recebedorDocumento", "DADO-QUE-NAO-DEVE-SER-SALVO")
+      .attach("foto", bytes, { filename: "foto.jpg", contentType: "image/jpeg" });
 
-    expect((await importar()).status).toBe(201);
+  it("importa em tenants/{tenant}/deliveries/{chave44} e impede duplicação", async () => {
+    const send = () => request(f.app).post("/api/v1/deliveries/xml")
+      .auth("operator", { type: "bearer" }).send({ xmlContent: xml(), driverId: "driver-a" });
+    expect((await send()).status).toBe(201);
     expect([...f.documents.keys()]).toEqual([path()]);
     expect((await importar()).status).toBe(409);
   });

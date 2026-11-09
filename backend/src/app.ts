@@ -6,23 +6,33 @@ import { createRoutes } from "./routes/index.js";
 import { getHealth } from "./controllers/health.controller.js";
 import { AppDependencies } from "./dependencies.js";
 import { HttpError } from "./utils/httpError.js";
+import { createCorsOptions } from "./config/cors.js";
 
 export function createApp(deps: AppDependencies) {
   const app = express();
+  const routeTemplate = (req: express.Request): string => {
+    const path = req.route?.path;
+    // Aliases share a canonical template; never log the raw request URL.
+    return Array.isArray(path) ? path[path.length - 1] : typeof path === "string" ? path : "unmatched";
+  };
   app.disable("x-powered-by");
-  app.use(cors());
   app.use((req, res, next) => {
     const requestId = randomUUID();
     const started = Date.now();
     res.setHeader("X-Request-Id", requestId);
+    res.locals.requestId = requestId;
     res.on("finish", () => deps.logger.info({
+      severity: res.statusCode >= 500 ? "ERROR" : res.statusCode >= 400 ? "WARNING" : "INFO",
       event: "http_request", requestId, method: req.method,
       // Only route templates: no raw URL, query, headers, body or identity.
-      route: req.route?.path ?? "unmatched", status: res.statusCode,
+      route: routeTemplate(req), status: res.statusCode,
       durationMs: Date.now() - started,
+      tenantId: req.user?.tenantId ?? null,
     }));
     next();
   });
+  const origins = (process.env.CORS_ALLOWED_ORIGINS ?? "http://localhost:5173").split(",").map(value => value.trim()).filter(Boolean);
+  app.use(cors(createCorsOptions(origins, process.env.CORS_HOSTING_SITE)));
   app.get("/healthz", getHealth);
   const ready = async (_req: express.Request, res: express.Response) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -65,7 +75,11 @@ export function createApp(deps: AppDependencies) {
       status = 400;
       message = "JSON inválido";
     }
-    if (status === 500) deps.logger.error({ event: "request_failed", status });
+    if (status === 500) deps.logger.error({
+      severity: "ERROR", event: "request_failed", status,
+      requestId: res.locals.requestId, tenantId: _req.user?.tenantId ?? null,
+      route: routeTemplate(_req),
+    });
     res.status(status).json({ error: message });
   };
   app.use(handleError);
