@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+*.log
+*serviceaccount*.json
+*-key.json
+gha-creds-*.json
+tests

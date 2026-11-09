@@ -9,11 +9,11 @@ Atualizado em 01/11/2026.
 - O projeto Firebase real da equipe está no plano gratuito **Spark**, sem conta de faturamento e sem cartão cadastrado (evidência na seção seguinte).
 - A API está no ar no Render (plano Free), em `https://entregaprova.onrender.com`. O frontend é publicado no Firebase Hosting (plano Spark) por GitHub Actions: preview a cada PR e produção no merge da `main`.
 - Monitoramento: o Render faz health check em `/healthz` e o UptimeRobot avisa por e-mail quando a API cai. Nenhum dos dois tem cartão cadastrado.
-- **Gasto acumulado: US$ 0,00** (teto do Checkpoint 2: US$ 5,00).
+- **Gasto acumulado: US$ 0,00** (teto registrado para a avaliação: US$ 5,00).
 
-## Evidência do plano Firebase Spark (Checkpoint 2)
+## Evidência do plano Firebase Spark
 
-O guia do Checkpoint 2 pede o print do painel de faturamento. Como o projeto da equipe está no plano Spark, não existe painel de faturamento com gasto a mostrar. A prova de que não há cobrança possível é mostrar que o projeto está no plano gratuito e que nenhuma conta de faturamento está vinculada a ele. Os dois prints abaixo cumprem esse papel.
+O guia de avaliação pede o print do painel de faturamento. Como o projeto da equipe está no plano Spark, não existe painel de faturamento com gasto a mostrar. A prova de que não há cobrança possível é mostrar que o projeto está no plano gratuito e que nenhuma conta de faturamento está vinculada a ele. Os dois prints abaixo cumprem esse papel.
 
 **Print A: plano do projeto.** Painel do projeto Firebase da equipe, com o plano **Spark (sem custo, US$ 0 por mês)** visível. O plano Spark não permite cobrança: quando um limite diário é atingido, o serviço para até o dia seguinte e nada é cobrado.
 
@@ -82,7 +82,7 @@ A decisão formal e a aprovação do professor para as exceções ao Caderno (Re
 
 ## Conferência dos limites gratuitos (31/10/2026)
 
-Antes do primeiro deploy (Checkpoint 3), os limites gratuitos usados pelo Plano Custo Zero foram conferidos de novo nas páginas oficiais dos serviços. Nenhum limite mudou em relação à conferência de 14/10/2026.
+Antes do primeiro deploy, os limites gratuitos usados pelo Plano Custo Zero foram conferidos de novo nas páginas oficiais dos serviços. Nenhum limite mudou em relação à conferência de 14/10/2026.
 
 | Serviço | Limite gratuito conferido |
 |---|---|

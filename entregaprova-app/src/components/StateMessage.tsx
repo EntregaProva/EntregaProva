@@ -8,7 +8,7 @@ interface StateMessageProps {
 
 const ICONE = { loading: "◌", empty: "∅", error: "✕" } as const;
 
-// Os 3 estados de tela exigidos no Checkpoint 2: carregando, vazio e erro.
+// Estados da interface: carregando, vazio e erro.
 export default function StateMessage({ kind, message, onRetry, actionLabel, onAction }: StateMessageProps) {
   return (
     <div className={`state-box ${kind}`} role={kind === "error" ? "alert" : "status"}>

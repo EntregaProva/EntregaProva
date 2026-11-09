@@ -8,6 +8,7 @@ export function createRoutes(deps: AppDependencies) {
   const routes = Router();
   const c = createDeliveryControllers(deps);
   routes.use(authenticateToken(deps.auth));
+  routes.get(["/entregas", "/deliveries"], requireRole(["admin", "operator", "driver"]), c.listDeliveries);
   routes.post(["/deliveries/xml", "/entregas/xml"], requireRole(["admin", "operator"]), c.importXML);
   routes.get(["/deliveries/:id", "/entregas/:id"], c.authorizeDelivery, c.getDelivery);
   routes.post("/deliveries/:id/proof", requireRole(["driver", "admin"]), c.authorizeDelivery,

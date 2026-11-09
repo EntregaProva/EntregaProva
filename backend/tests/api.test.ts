@@ -27,7 +27,7 @@ describe("Validação XML em quatro estágios", () => {
   });
 });
 
-describe("API CP2 e CP3", () => {
+describe("API de entregas", () => {
   let f: ReturnType<typeof fixture>;
   beforeEach(() => { f = fixture(); });
   const upload = (idem = "upload-1", name = "RECEBEDOR SINTETICO", bytes = jpeg, token = "driver") =>
