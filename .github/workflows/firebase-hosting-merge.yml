@@ -22,11 +22,35 @@ jobs:
       - name: Publicar o SHA aprovado no Render e verificar a API
         run: node backend/scripts/deploy-render.mjs
         env:
-          VITE_API_URL: https://entregaprova.onrender.com
-          VITE_USE_EMULATORS: "false"
-          VITE_FIREBASE_PROJECT_ID: entregaprova
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: entregaprova.firebaseapp.com
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          TARGET_API_URL: ${{ vars.API_BASE_URL }}
+          EXPECTED_API_REVISION: ${{ github.sha }}
+  deploy-hosting:
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    env:
+      VITE_API_URL: ${{ vars.API_BASE_URL }}
+      VITE_API_PREFIX: /api/v1
+      VITE_USE_EMULATORS: "false"
+      VITE_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_PROJECT_ID }}.firebaseapp.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: entregaprova-app/package-lock.json
+      - name: Conferir configuração pública do frontend
+        run: node infra/deploy/check-web-config.mjs
+      - run: npm ci
+        working-directory: entregaprova-app
+      - run: npm run build
+        working-directory: entregaprova-app
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
