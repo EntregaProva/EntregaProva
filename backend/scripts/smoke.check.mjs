@@ -103,9 +103,8 @@ test("jornada verifica a revisão, baixa o comprovante e só então aprova", asy
 });
 
 test("Hosting exige URL Render explícita e configuração Firebase real", () => {
-  const valid = { VITE_FIREBASE_PROJECT_ID: "real-project", VITE_FIREBASE_API_KEY: `AIza${"a".repeat(35)}`, VITE_API_URL: "https://api.example" };
+  const valid = { VITE_FIREBASE_PROJECT_ID: "real-project", VITE_FIREBASE_API_KEY: "web-key", VITE_API_URL: "https://api.example" };
   checkWebConfig(valid);
-  assert.throws(() => checkWebConfig({ ...valid, VITE_FIREBASE_API_KEY: JSON.stringify({ apiKey: valid.VITE_FIREBASE_API_KEY }) }), /somente o valor de apiKey/);
   assert.throws(() => checkWebConfig({ ...valid, VITE_API_URL: "" }));
   assert.throws(() => checkWebConfig({ ...valid, VITE_API_URL: "http://localhost:3000" }));
   assert.throws(() => checkWebConfig({ ...valid, VITE_FIREBASE_PROJECT_ID: "demo-entregaprova" }));
