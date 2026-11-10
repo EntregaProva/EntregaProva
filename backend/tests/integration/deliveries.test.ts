@@ -30,7 +30,7 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
     expect((await request(f.app).get("/api/v1/entregas").auth(parts.join("."), { type: "bearer" })).status).toBe(401);
   });
 
-  it("lista somente o tenant e o motorista verificados", async () => {
+  it("CT-15: lista somente o tenant e o motorista verificados", async () => {
     expect((await importNote()).status).toBe(201);
     for (const role of ["operator", "driver"]) {
       const res = await request(f.app).get("/api/v1/entregas").auth(f.tokens[role], { type: "bearer" });
@@ -48,13 +48,15 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
     expect((await request(f.app).get("/api/v1/entregas?driverId=outro").auth(f.tokens.driver, { type: "bearer" })).status).toBe(400);
   });
 
-  it("pagina com cursor e combina filtros no Firestore", async () => {
+  it("CT-14: operador pagina com cursor e combina filtros no Firestore", async () => {
     const ids = [1, 2, 3].map(n => String(n).padStart(44, "0"));
     for (const id of ids) await f.db.doc(`tenants/${f.tenant}/deliveries/${id}`).set({ driverId: f.driverId, status: "COMPROVADO" });
-    const get = (query: string) => request(f.app).get(`/api/v1/entregas?status=COMPROVADO&limit=2${query}`).auth(f.tokens.driver, { type: "bearer" });
+    const get = (query: string) => request(f.app).get(`/api/v1/entregas?status=COMPROVADO&limit=2${query}`).auth(f.tokens.operator, { type: "bearer" });
     const first = await get("");
+    expect(first.status).toBe(200);
     expect(first.body.itens.map((item: { id: string }) => item.id)).toEqual(ids.slice(0, 2));
     const second = await get(`&cursor=${first.body.proximoCursor}`);
+    expect(second.status).toBe(200);
     expect(second.body.itens.map((item: { id: string }) => item.id)).toEqual(ids.slice(2));
     expect(second.body.proximoCursor).toBeNull();
     expect((await request(f.app).get("/api/v1/entregas?limit=0").auth(f.tokens.driver, { type: "bearer" })).status).toBe(400);

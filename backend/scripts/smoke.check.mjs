@@ -4,6 +4,7 @@ import { smoke } from "./smoke.mjs";
 import { deployRender } from "./deploy-render.mjs";
 import { checkWebConfig } from "../../infra/deploy/check-web-config.mjs";
 import { cleanupProofs } from "./cleanup-proofs.mjs";
+import { verifyJourney } from "./verify-journey.mjs";
 
 test("smoke exige JSON da API e SHA da revisão candidata", async () => {
   const valid = async url => Response.json(url.endsWith("healthz")
@@ -33,6 +34,72 @@ test("Render solicita o SHA aprovado e espera a revisão nova, sem confundir hoo
   assert.equal(calls, 4);
   await assert.rejects(deployRender(env, async () => new Response("", { status: 401 })), /recusou deploy/);
   await assert.rejects(deployRender(env, async () => { throw new Error(env.RENDER_DEPLOY_HOOK_URL); }), error => !error.message.includes("synthetic"));
+});
+
+test("jornada verifica a revisão, baixa o comprovante e só então aprova", async () => {
+  const tenantId = "homologacao-smoke";
+  const token = role => `fake.${Buffer.from(JSON.stringify({ tenantId, role, sub: role })).toString("base64url")}.fake`;
+  const env = {
+    TARGET_API_URL: "https://api.example",
+    EXPECTED_API_REVISION: "a".repeat(40),
+    TEST_SMOKE_TENANT: tenantId,
+    TEST_OPERATOR_TOKEN: token("operator"),
+    TEST_DRIVER_TOKEN: token("driver"),
+    SMOKE_WRITE_ENABLED: "true",
+  };
+  const signedUrl = "https://storage.example/comprovante?token=synthetic";
+  let route, photo;
+  const steps = [
+    (url) => {
+      assert.equal(url.pathname, "/healthz");
+      return Response.json({ status: "ok", service: "entregaprova-api", revision: env.EXPECTED_API_REVISION });
+    },
+    (url) => {
+      assert.equal(url.pathname, "/readyz");
+      return Response.json({ status: "ready" });
+    },
+    (url, init) => {
+      assert.equal(url.pathname, "/api/v1/entregas/xml");
+      assert.equal(init.headers.Authorization, `Bearer ${env.TEST_OPERATOR_TOKEN}`);
+      const { xmlContent, driverId } = JSON.parse(init.body);
+      const key = /Id="NFe(\d{44})"/.exec(xmlContent)?.[1];
+      assert.ok(key);
+      assert.equal(driverId, "driver");
+      route = `/api/v1/entregas/${key}`;
+      return Response.json({}, { status: 201 });
+    },
+    async (url, init) => {
+      assert.equal(url.pathname, `${route}/comprovantes`);
+      assert.equal(init.headers.Authorization, `Bearer ${env.TEST_DRIVER_TOKEN}`);
+      assert.ok(init.headers["Idempotency-Key"]);
+      photo = await init.body.get("foto").arrayBuffer();
+      return Response.json({ status: "COMPROVADO" });
+    },
+    (url) => {
+      assert.equal(url.pathname, route);
+      return Response.json({ status: "COMPROVADO", comprovante: { arquivoDisponivel: true, arquivoUrl: signedUrl } });
+    },
+    (url, init) => {
+      assert.equal(url.href, signedUrl);
+      assert.equal(new Headers(init.headers).has("authorization"), false);
+      return new Response(photo);
+    },
+    (url, init) => {
+      assert.equal(url.pathname, `${route}/conferencia`);
+      assert.deepEqual(JSON.parse(init.body), { decisao: "APROVAR" });
+      return Response.json({ status: "CONFERIDO" });
+    },
+  ];
+  const fetcher = async (url, init) => {
+    const step = steps.shift();
+    assert.ok(step);
+    return step(new URL(url), init);
+  };
+
+  await assert.rejects(verifyJourney({ ...env, SMOKE_WRITE_ENABLED: "false" }, fetcher), /tenant dedicado/);
+  assert.equal(steps.length, 7);
+  await verifyJourney(env, fetcher, () => {});
+  assert.equal(steps.length, 0);
 });
 
 test("Hosting exige URL Render explícita e configuração Firebase real", () => {

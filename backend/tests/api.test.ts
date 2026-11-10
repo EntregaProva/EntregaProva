@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { fixture, jpeg, key, path, xml } from "./helpers.js";
 import { MAX_XML_BYTES, parseNFeXML } from "../src/utils/xmlParser.js";
@@ -127,13 +127,6 @@ describe("US-01 - parser de XML", () => {
 describe("API de entregas", () => {
   let f: ReturnType<typeof fixture>;
   beforeEach(() => { f = fixture(); });
-  const upload = (idem = "upload-1", name = "RECEBEDOR SINTETICO", bytes = jpeg, token = "driver") =>
-    request(f.app).post(`/api/v1/entregas/${key}/comprovantes`)
-      .auth(token, { type: "bearer" }).set("Idempotency-Key", idem)
-      .field("recebedor", name).field("dataHora", "2026-10-31T10:00:00-03:00")
-      .field("recebedorDocumento", "DADO-QUE-NAO-DEVE-SER-SALVO")
-      .attach("foto", bytes, { filename: "foto.jpg", contentType: "image/jpeg" });
-
   it("importa em tenants/{tenant}/deliveries/{chave44} e impede duplicação", async () => {
     const send = () => request(f.app).post("/api/v1/deliveries/xml")
       .auth("operator", { type: "bearer" }).send({ xmlContent: xml(), driverId: "driver-a" });
@@ -392,12 +385,6 @@ describe("Segurança e compatibilidade da API", () => {
   });
 });
 
-describe("US-06 - listagem de entregas", () => {
-  it.todo("CT-14: operador lista as entregas do tenant, paginadas por cursor");
-  it.todo("CT-15: motorista vê só as entregas atribuídas a ele");
-  it.todo("CT-16: sem entregas, devolve 200 com lista vazia");
-});
-
 describe("Segurança - CORS", () => {
   it("CT-18: não libera origem fora da lista", async () => {
   const res = await request(f.app)
@@ -407,5 +394,22 @@ describe("Segurança - CORS", () => {
   expect(res.headers["access-control-allow-origin"]).toBeUndefined();
 });
 
-  it.todo("CT-19: libera as origens do Firebase Hosting e dos emuladores");
+  it("CT-19: libera as origens configuradas do Hosting e do frontend local", async () => {
+    const allowed = ["https://entregaprova.web.app", "http://localhost:5173"];
+    vi.stubEnv("CORS_ALLOWED_ORIGINS", allowed.join(","));
+    vi.stubEnv("CORS_HOSTING_SITE", "entregaprova");
+
+    try {
+      const { app } = fixture();
+      for (const origin of [...allowed, "https://entregaprova--pr-23-abc123.web.app"]) {
+        const res = await request(app).options("/api/v1/entregas")
+          .set("Origin", origin)
+          .set("Access-Control-Request-Method", "GET");
+        expect(res.status).toBe(204);
+        expect(res.headers["access-control-allow-origin"]).toBe(origin);
+      }
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
