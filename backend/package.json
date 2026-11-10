@@ -12,10 +12,12 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "tsc -p tsconfig.test.json && vitest run",
     "test:rules": "firebase emulators:exec --only firestore --project demo-entregaprova \"vitest run tests/security/firestore-rules.test.ts\"",
-    "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json \"vitest run\"",
+    "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json \"npm run test:report\"",
+    "test:report": "vitest run --maxWorkers=2 --coverage --reporter=default --reporter=junit && node scripts/check-coverage.mjs",
     "test:smoke": "node --test scripts/smoke.check.mjs",
     "smoke": "node scripts/smoke.mjs",
     "verify:published": "node scripts/verify-published.mjs",
+    "verify:journey": "node scripts/verify-journey.mjs",
     "cleanup:proofs": "node scripts/cleanup-proofs.mjs"
   },
   "dependencies": {
@@ -32,16 +34,19 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/multer": "^2.3.0",
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.0.0",
     "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
-    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/coverage-v8": "5.1.0",
     "eslint": "^8.57.0",
     "firebase": "^13.1.0",
     "supertest": "^7.3.1",
     "tsx": "^4.16.2",
     "typescript": "~5.5.4",
-    "vitest": "^1.6.0"
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
   }
 }

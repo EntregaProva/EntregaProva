@@ -25,8 +25,23 @@ describe("Autorização e isolamento - entregas", () => {
   });
 
   describe("CT-20: sem token, token inválido ou vencido retorna 401", () => {
-    it("CT-20.1: GET /entregas/{id} sem token", async () => {
-      expect((await get(entrega)).status).toBe(401);
+    it.each([
+      ["get", "/api/v1/entregas"],
+      ["get", "/api/v1/deliveries"],
+      ["get", entrega],
+      ["get", `/api/v1/deliveries/${key}`],
+      ["post", "/api/v1/entregas/xml"],
+      ["post", "/api/v1/deliveries/xml"],
+      ["post", `${entrega}/comprovantes`],
+      ["post", `/api/v1/deliveries/${key}/proof`],
+      ["post", `${entrega}/conferencia`],
+      ["patch", `/api/v1/deliveries/${key}/check`],
+    ] as const)("recusa %s %s sem token antes de acessar os dados", async (method, url) => {
+      const res = await request(f.app)[method](url);
+      expect(res.status).toBe(401);
+      expect(f.read).not.toHaveBeenCalled();
+      expect(f.runTransaction).not.toHaveBeenCalled();
+      expect(f.save).not.toHaveBeenCalled();
     });
 
     it("CT-20.2: GET /entregas/{id} com token vencido", async () => {
@@ -35,14 +50,6 @@ describe("Autorização e isolamento - entregas", () => {
       );
 
       expect((await get(entrega, "token-vencido")).status).toBe(401);
-    });
-
-    it("CT-20.3: POST /comprovantes sem token", async () => {
-      expect((await post(`${entrega}/comprovantes`)).status).toBe(401);
-    });
-
-    it("CT-20.4: POST /conferencia sem token", async () => {
-      expect((await post(`${entrega}/conferencia`)).status).toBe(401);
     });
 
     it("CT-20.5: GET /entregas/{id} com token não reconhecido", async () => {

@@ -5,7 +5,7 @@ import { jpeg } from "../helpers.js";
 import { createRuntimeProofStorage } from "../../src/config/proof-storage.js";
 
 function fixture() {
-  const transport = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
+  const transport = vi.fn<typeof fetch>();
   const client = createClient("https://synthetic.supabase.co", "backend-synthetic-secret", {
     auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: transport },
   });
@@ -13,9 +13,22 @@ function fixture() {
 }
 const failure = (code: string, status: number) => Response.json({ code, message: "synthetic", statusCode: String(status) }, { status });
 const path = "tenants/tenant-a/deliveries/123/proofs/hash";
+const validBucket = {
+  public: false,
+  file_size_limit: 300_000,
+  allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+};
+
+function configureSupabaseRuntime() {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("PROOF_STORAGE_PROVIDER", "supabase");
+  vi.stubEnv("SUPABASE_URL", "https://synthetic.supabase.co");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "backend-synthetic-secret");
+  vi.stubEnv("SUPABASE_STORAGE_BUCKET", "comprovantes");
+}
 
 describe("Adaptador Supabase com SDK real e transporte HTTP simulado", () => {
-  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
   it("envia bytes sem sobrescrever, reutiliza só duplicatas e propaga falhas", async () => {
     const { transport, storage } = fixture();
     transport.mockResolvedValueOnce(Response.json({ Key: path, Id: "synthetic-id" }));
@@ -58,17 +71,32 @@ describe("Adaptador Supabase com SDK real e transporte HTTP simulado", () => {
   });
 
   it("produção recusa bucket público ou sem restrições antes de iniciar o servidor", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("PROOF_STORAGE_PROVIDER", "supabase");
-    vi.stubEnv("SUPABASE_URL", "https://synthetic.supabase.co");
-    vi.stubEnv("SUPABASE_SECRET_KEY", "backend-synthetic-secret");
-    vi.stubEnv("SUPABASE_STORAGE_BUCKET", "comprovantes");
-    const valid = { public: false, file_size_limit: 300_000, allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "application/pdf"] };
-    for (const body of [{ ...valid, public: true }, { ...valid, file_size_limit: null }, { ...valid, allowed_mime_types: ["*/*"] }]) {
+    configureSupabaseRuntime();
+    for (const body of [{ ...validBucket, public: true }, { ...validBucket, file_size_limit: null }, { ...validBucket, allowed_mime_types: ["*/*"] }]) {
       vi.stubGlobal("fetch", vi.fn(async () => Response.json(body)));
       await expect(createRuntimeProofStorage()).rejects.toThrow("Bucket Supabase");
     }
-    vi.stubGlobal("fetch", vi.fn(async () => Response.json(valid)));
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json(validBucket)));
     await expect(createRuntimeProofStorage()).resolves.toHaveProperty("uploadIfAbsent");
+  });
+
+  it("propaga o timeout ao consultar se o comprovante existe", async () => {
+    configureSupabaseRuntime();
+    const expired = AbortSignal.abort(new DOMException("Tempo limite excedido", "TimeoutError"));
+    const timeout = vi.spyOn(AbortSignal, "timeout")
+      .mockReturnValueOnce(new AbortController().signal)
+      .mockReturnValueOnce(expired);
+    const transport = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(validBucket))
+      .mockImplementationOnce(async (_url, init) => {
+        init?.signal?.throwIfAborted();
+        return Response.json({ id: "synthetic-id" });
+      });
+    vi.stubGlobal("fetch", transport);
+
+    const storage = await createRuntimeProofStorage();
+    await expect(storage.exists(path)).rejects.toThrow();
+    expect(timeout).toHaveBeenNthCalledWith(2, 15_000);
+    expect(transport.mock.calls[1][1]?.signal).toBe(expired);
   });
 });

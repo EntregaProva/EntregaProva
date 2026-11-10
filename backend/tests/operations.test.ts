@@ -47,6 +47,20 @@ describe("Operação, privacidade e comprovantes", () => {
     expect(other.documents.get(path())?.status).toBe("PENDENTE");
   });
 
+  it("mantém a entrega pendente quando o armazenamento falha", async () => {
+    const f = fixture();
+    f.seed();
+    f.save.mockRejectedValueOnce(new Error("Falha interna do armazenamento"));
+
+    const res = await upload(f);
+
+    expect(res.status).toBe(500);
+    expect(JSON.stringify(res.body)).not.toContain("Falha interna do armazenamento");
+    expect(f.documents.get(path())?.status).toBe("PENDENTE");
+    expect(f.documents.get(path())?.comprovante).toBeUndefined();
+    expect(f.objects.size).toBe(0);
+  });
+
   it("preview CORS só é permitido para canais PR do site explicitamente configurado", () => {
     const origin = createCorsOptions([], "site-do-time").origin;
     if (typeof origin !== "function") throw new Error("Política de origem ausente");
