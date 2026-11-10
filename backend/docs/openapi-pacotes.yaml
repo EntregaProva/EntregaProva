@@ -1,0 +1,135 @@
+openapi: 3.0.3
+info:
+  title: EntregaProva - Pacotes de comprovação
+  version: 1.0.0
+  description: Contrato complementar da US-05 implementado no backend.
+servers:
+  - url: /api/v1
+security:
+  - FirebaseToken: []
+paths:
+  /pacotes-comprovacao:
+    post:
+      summary: Solicita pacote ZIP para admin ou operator do tenant autenticado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pedido'
+      responses:
+        '202':
+          description: Solicitação persistida e processamento assíncrono iniciado
+          headers:
+            Location:
+              schema: { type: string }
+              description: Caminho da consulta autenticada do pacote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pacote'
+        '400': { description: Pedido inválido ou formato diferente de ZIP }
+        '401': { description: Token ausente ou inválido }
+        '403': { description: Papel não autorizado }
+  /pacotes-comprovacao/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      summary: Consulta o processamento e renova o link de download
+      responses:
+        '200':
+          description: Estado atual; falhas de geração aparecem como FALHOU e erro
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pacote'
+        '400': { description: ID inválido }
+        '401': { description: Token ausente ou inválido }
+        '403': { description: Papel não autorizado }
+        '404': { description: Pacote inexistente no tenant autenticado }
+  /pacotes-comprovacao/{id}/arquivo:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      summary: Baixa ZIP mediante capacidade assinada válida por 15 minutos
+      security: []
+      parameters:
+        - in: query
+          name: tenant
+          required: true
+          schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+        - in: query
+          name: expires
+          required: true
+          schema: { type: string, pattern: '^\d{13}$' }
+          description: Expiração em milissegundos Unix, assinada pelo servidor
+        - in: query
+          name: signature
+          required: true
+          schema: { type: string, pattern: '^[a-f0-9]{64}$' }
+          description: HMAC-SHA256 vinculado a tenant, pacote e expiração
+      responses:
+        '200':
+          description: ZIP com resumo.json, fotos por chave e manifesto SHA-256
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        '400': { description: Identificador inválido }
+        '403': { description: Capacidade inválida ou expirada }
+        '404': { description: Pacote inexistente }
+        '409': { description: Pacote indisponível ou original alterado }
+        '410': { description: Original apagado ou expirado }
+        '413': { description: Limite de tamanho excedido }
+        '422': { description: Conteúdo do comprovante inválido }
+        '429': { description: Limite de downloads simultâneos atingido }
+components:
+  securitySchemes:
+    FirebaseToken:
+      type: http
+      scheme: bearer
+      bearerFormat: Firebase ID token
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    Pedido:
+      type: object
+      required: [embarcadorId, entregaIds]
+      properties:
+        embarcadorId:
+          type: string
+          pattern: '^\d{14}$'
+          description: CNPJ do emitente extraído da chave NF-e
+        entregaIds:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          items: { type: string, pattern: '^\d{44}$' }
+        formato: { type: string, enum: [ZIP], default: ZIP }
+        inicio:
+          type: string
+          format: date-time
+          description: Início inclusivo por criadoEm, UTC com milissegundos
+        fim:
+          type: string
+          format: date-time
+          description: Fim inclusivo por criadoEm; obrigatório junto com inicio
+    Pacote:
+      type: object
+      required: [id, embarcadorId, status, criadoEm]
+      properties:
+        id: { type: string, format: uuid }
+        embarcadorId: { type: string }
+        status: { type: string, enum: [PROCESSANDO, PRONTO, FALHOU] }
+        criadoEm: { type: string, format: date-time }
+        quantidadeEntregas: { type: integer, minimum: 0 }
+        erro: { type: string, nullable: true }
+        urlDownload:
+          type: string
+          nullable: true
+          description: Caminho relativo à origem da API com capacidade assinada
+        expiraEm: { type: string, format: date-time, nullable: true }

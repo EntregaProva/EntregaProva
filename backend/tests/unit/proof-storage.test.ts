@@ -28,6 +28,15 @@ function configureSupabaseRuntime() {
 }
 
 describe("Adaptador Supabase com SDK real e transporte HTTP simulado", () => {
+  it("baixa os bytes privados e propaga indisponibilidade", async () => {
+    const { transport, storage } = fixture();
+    transport.mockResolvedValueOnce(new Response(new Uint8Array(jpeg), { headers: { "Content-Type": "image/jpeg" } }));
+    expect(await storage.download(path)).toEqual(jpeg);
+    expect(String(transport.mock.calls[0][0])).toContain("/storage/v1/object/comprovantes/");
+    expect(new Headers(transport.mock.calls[0][1]?.headers).get("authorization")).toBe("Bearer backend-synthetic-secret");
+    transport.mockResolvedValueOnce(failure("NoSuchKey", 404));
+    await expect(storage.download(path)).rejects.toThrow();
+  });
   afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
   it("envia bytes sem sobrescrever, reutiliza só duplicatas e propaga falhas", async () => {
     const { transport, storage } = fixture();

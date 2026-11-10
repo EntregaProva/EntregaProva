@@ -25,7 +25,13 @@ export function fixture() {
     exists: map.has(ref.path), data: () => structuredClone(map.get(ref.path)),
   });
   const read = vi.fn(async (ref: { path: string }) => snapshot(documents, ref));
-  const doc = (value: string) => ({ path: value, get: () => read({ path: value }) });
+  const doc = (value: string) => ({
+    path: value, get: () => read({ path: value }),
+    create: async (data: DocumentData) => {
+      if (documents.has(value)) throw new Error("exists");
+      documents.set(value, structuredClone(data));
+    },
+  });
   // Serialized atomic transactions with rollback. This is a test double, not an emulator.
   let queue = Promise.resolve();
   const runTransaction = vi.fn((callback: (tx: unknown) => Promise<unknown>) => {
@@ -65,6 +71,10 @@ export function fixture() {
     auth: { verifyIdToken }, db: { doc, runTransaction },
     proofStorage: createEmulatorProofStorage({ bucket: () => ({ file: (name: string) => ({
       exists: async () => [objects.has(name)],
+      download: async () => {
+        if (!objects.has(name)) throw new Error("missing");
+        return [objects.get(name)];
+      },
       save: (bytes: Buffer, options: unknown) => save(name, bytes, options),
       getSignedUrl: (options: unknown) => sign(name, options),
     }) }) } as unknown as Pick<Storage, "bucket">), logger,

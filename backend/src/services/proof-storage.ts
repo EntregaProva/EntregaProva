@@ -7,6 +7,7 @@ const storageCode = (error: unknown): string | undefined => {
 };
 
 export interface ProofStorage {
+  download(path: string): Promise<Buffer>;
   uploadIfAbsent(path: string, bytes: Buffer, contentType: string): Promise<void>;
   exists(path: string): Promise<boolean>;
   signedUrl(path: string, expires: number): Promise<string>;
@@ -18,6 +19,7 @@ export function createEmulatorProofStorage(
   signer?: ProofStorage["signedUrl"],
 ): ProofStorage {
   return {
+    async download(path) { return (await storage.bucket().file(path).download())[0]; },
     async uploadIfAbsent(path, bytes, contentType) {
       try {
         await storage.bucket().file(path).save(bytes, {
@@ -38,6 +40,12 @@ export function createEmulatorProofStorage(
 export function createSupabaseProofStorage(client: SupabaseClient, bucket: string): ProofStorage {
   const files = client.storage.from(bucket);
   return {
+    async download(path) {
+      const { data, error } = await files.download(path);
+      if (error) throw error;
+      if (!data) throw new Error("Comprovante indisponível");
+      return Buffer.from(await data.arrayBuffer());
+    },
     async uploadIfAbsent(path, bytes, contentType) {
       const { error } = await files.upload(path, bytes, { contentType, upsert: false, cacheControl: "0" });
       // Only an actual duplicate may be reused after a lost upload response.

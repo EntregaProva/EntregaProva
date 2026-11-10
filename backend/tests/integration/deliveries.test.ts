@@ -2,6 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { emulatorsReady, emulatorFixture } from "./firebase.fixture.js";
 import { jpeg, key, xml } from "../helpers.js";
+import { createHash } from "node:crypto";
+import { unzipSync, strFromU8 } from "fflate";
 
 if (process.env.CI && !emulatorsReady) throw new Error("CI precisa exercitar Auth, Firestore e Storage emulados");
 
@@ -15,6 +17,36 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
   const proof = () => request(f.app).post(`/api/v1/entregas/${key}/comprovantes`).auth(f.tokens.driver, { type: "bearer" })
     .set("Idempotency-Key", "integration-proof").field("recebedor", "RECEBEDOR SINTETICO")
     .field("dataHora", "2026-11-05T10:00:00-03:00").attach("foto", jpeg, { filename: "foto.jpg", contentType: "image/jpeg" });
+
+  it("US-05: importa, comprova, confere e baixa pacote com manifesto usando os três emuladores", async () => {
+    expect((await importNote()).status).toBe(201);
+    expect((await proof()).status).toBe(200);
+    expect((await request(f.app).post(`/api/v1/entregas/${key}/conferencia`)
+      .auth(f.tokens.operator, { type: "bearer" }).send({ decisao: "APROVAR" })).status).toBe(200);
+    const created = await request(f.app).post("/api/v1/pacotes-comprovacao")
+      .auth(f.tokens.operator, { type: "bearer" }).send({ embarcadorId: key.slice(6, 20), entregaIds: [key] });
+    expect(created.status).toBe(202);
+    const url = created.headers.location;
+    let job;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      job = await request(f.app).get(url).auth(f.tokens.operator, { type: "bearer" });
+      if (job.body.status !== "PROCESSANDO") break;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    expect(job?.body.status).toBe("PRONTO");
+    expect((await request(f.app).get(url).auth(f.tokens.otherTenant, { type: "bearer" })).status).toBe(404);
+    expect((await request(f.app).get(url).auth(f.tokens.driver, { type: "bearer" })).status).toBe(403);
+    const download = await request(f.app).get(job!.body.urlDownload).buffer(true).parse((res, callback) => {
+      const chunks: Buffer[] = [];
+      res.on("data", chunk => chunks.push(Buffer.from(chunk)));
+      res.on("end", () => callback(null, Buffer.concat(chunks)));
+    });
+    expect(download.status).toBe(200);
+    const files = unzipSync(download.body);
+    expect(Buffer.from(files[`fotos/${key}.jpg`])).toEqual(jpeg);
+    const manifest = JSON.parse(strFromU8(files["manifesto.json"]));
+    expect(manifest.arquivos[1].sha256).toBe(createHash("sha256").update(jpeg).digest("hex"));
+  }, 30_000);
 
   it("verifica ID token do Auth e persiste importação/emitente no Firestore", async () => {
     expect((await importNote()).status).toBe(201);
