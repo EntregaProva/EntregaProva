@@ -5,14 +5,14 @@ export default function StatsGrid({ deliveries }: { deliveries: Delivery[] }) {
   const contar = (...status: string[]) => deliveries.filter((d) => status.includes(d.status)).length;
 
   const cards = [
-    { icon: "▣", cor: "blue-bg", label: "Total de entregas", valor: deliveries.length, nota: "Importadas até agora" },
+    { icon: "▣", cor: "blue-bg", label: "Entregas nesta página", valor: deliveries.length, nota: "Registros exibidos abaixo" },
     { icon: "✓", cor: "green-bg", label: "Conferidas", valor: contar("CONFERIDO"), nota: "Comprovante validado" },
     { icon: "◷", cor: "yellow-bg", label: "Aguardando", valor: contar("PENDENTE", "COMPROVADO"), nota: "Precisam de acompanhamento" },
     { icon: "!", cor: "red-bg", label: "Rejeitadas", valor: contar("REJEITADO"), nota: "Precisam de novo comprovante" },
   ];
 
   return (
-    <section className="stats-grid" aria-label="Indicadores">
+    <section className="stats-grid" aria-label="Indicadores da página">
       {cards.map((c) => (
         <article className="stat-card" key={c.label}>
           <div className="stat-top">

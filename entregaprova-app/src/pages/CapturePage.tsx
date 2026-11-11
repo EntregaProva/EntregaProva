@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { listDeliveries, sendProof } from "../api/deliveries.ts";
+import { sendProof } from "../api/deliveries.ts";
 import { ApiError, mensagemDoErro } from "../api/client.ts";
 import { MAX_PHOTO_MB } from "../config.ts";
 import { formatarDataHora, novaChaveDeIdempotencia } from "../format.ts";
 import { compressProofPhoto } from "../imageCompression.ts";
-import { useAsyncData } from "../hooks/useAsyncData.ts";
+import { useDeliveryPages } from "../hooks/useDeliveryPages.ts";
+import DeliveryPagination from "../components/DeliveryPagination.tsx";
 import { infoDoStatus } from "../status.ts";
 import { validarFoto } from "../validation.ts";
 import StateMessage from "../components/StateMessage.tsx";
@@ -20,7 +21,7 @@ interface ProofAttempt {
 }
 
 export default function CapturePage({ onNavigate }: { onNavigate: (view: View) => void }) {
-  const { data, error, loading, reload } = useAsyncData(listDeliveries);
+  const { data, error, loading, reload, pagination } = useDeliveryPages();
   const [entregaId, setEntregaId] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -138,7 +139,7 @@ export default function CapturePage({ onNavigate }: { onNavigate: (view: View) =
       {loading && <StateMessage kind="loading" message="Carregando entregas..." />}
       {!loading && error && <StateMessage kind="error" message={error} onRetry={reload} />}
       {!loading && !error && data && elegiveis.length === 0 && (
-        <StateMessage kind="empty" message="Não há entregas pendentes ou rejeitadas para comprovar." actionLabel="Importar XML" onAction={() => onNavigate("importar")} />
+        <StateMessage kind="empty" message="Não há entregas pendentes ou rejeitadas nesta página." actionLabel="Importar XML" onAction={() => onNavigate("importar")} />
       )}
 
       {!loading && !error && elegiveis.length > 0 && (
@@ -175,6 +176,12 @@ export default function CapturePage({ onNavigate }: { onNavigate: (view: View) =
           </div>
         </form>
       )}
+      <DeliveryPagination
+        page={pagination.page}
+        disabled={loading || enviando || preparandoFoto}
+        previous={pagination.previous && (() => { setEntregaId(""); pagination.previous?.(); })}
+        next={pagination.next && (() => { setEntregaId(""); pagination.next?.(); })}
+      />
     </>
   );
 }
