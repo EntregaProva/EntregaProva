@@ -71,6 +71,20 @@ describe("US-05 - pacote pela API", () => {
     expect((await request(f.app).get(`${endpoint}/${body.id}/arquivo`)).status).toBe(403);
   });
 
+  it("permite ao financeiro gerar e consultar pacotes do próprio tenant sem liberar outras rotas", async () => {
+    const f = prepared();
+    f.users.financeiro = { uid: "finance-a", tenantId: "tenant-a", role: "financeiro" };
+    f.users.financeiroB = { uid: "finance-b", tenantId: "tenant-b", role: "financeiro" };
+    const created = await request(f.app).post(endpoint).auth("financeiro", { type: "bearer" }).send(input);
+    expect(created.status).toBe(202);
+    expect((await finished(f, created.body.id)).status).toBe("PRONTO");
+    expect((await request(f.app).get(created.headers.location).auth("financeiro", { type: "bearer" })).body.urlDownload).toEqual(expect.any(String));
+    expect((await request(f.app).get(created.headers.location).auth("financeiroB", { type: "bearer" })).status).toBe(404);
+    for (const route of ["/entregas", "/deliveries", `/entregas/${key}`, `/deliveries/${key}`]) {
+      expect((await request(f.app).get(`/api/v1${route}`).auth("financeiro", { type: "bearer" })).status).toBe(403);
+    }
+  });
+
   it("rejeita links adulterados e expirados", async () => {
     const f = prepared();
     const { body } = await create(f);

@@ -12,11 +12,12 @@ export function createRoutes(deps: AppDependencies) {
   // The download capability is short-lived and verified by the package service.
   routes.get("/pacotes-comprovacao/:id/arquivo", packages.download);
   routes.use(authenticateToken(deps.auth));
-  routes.post("/pacotes-comprovacao", requireRole(["admin", "operator"]), packages.create);
-  routes.get("/pacotes-comprovacao/:id", requireRole(["admin", "operator"]), packages.get);
+  const authorizePackages = requireRole(["admin", "operator", "financeiro"]);
+  routes.post("/pacotes-comprovacao", authorizePackages, packages.create);
+  routes.get("/pacotes-comprovacao/:id", authorizePackages, packages.get);
   routes.get(["/entregas", "/deliveries"], requireRole(["admin", "operator", "driver"]), c.listDeliveries);
   routes.post(["/deliveries/xml", "/entregas/xml"], requireRole(["admin", "operator"]), c.importXML);
-  routes.get(["/deliveries/:id", "/entregas/:id"], c.authorizeDelivery, c.getDelivery);
+  routes.get(["/deliveries/:id", "/entregas/:id"], requireRole(["admin", "operator", "driver"]), c.authorizeDelivery, c.getDelivery);
   routes.post("/deliveries/:id/proof", requireRole(["driver", "admin"]), c.authorizeDelivery,
     uploadProof.single("file"), c.submitProof);
   routes.post("/entregas/:id/comprovantes", requireRole(["driver", "admin"]), c.authorizeDelivery,
