@@ -36,7 +36,7 @@ test("Render solicita o SHA aprovado e espera a revisão nova, sem confundir hoo
   await assert.rejects(deployRender(env, async () => { throw new Error(env.RENDER_DEPLOY_HOOK_URL); }), error => !error.message.includes("synthetic"));
 });
 
-test("jornada verifica a revisão, baixa o comprovante e só então aprova", async () => {
+test("jornada verifica a revisão, confere o comprovante e valida o ZIP do financeiro", async () => {
   const tenantId = "homologacao-smoke";
   const token = role => `fake.${Buffer.from(JSON.stringify({ tenantId, role, sub: role })).toString("base64url")}.fake`;
   const env = {
@@ -45,10 +45,13 @@ test("jornada verifica a revisão, baixa o comprovante e só então aprova", asy
     TEST_SMOKE_TENANT: tenantId,
     TEST_OPERATOR_TOKEN: token("operator"),
     TEST_DRIVER_TOKEN: token("driver"),
+    TEST_FINANCE_TOKEN: token("financeiro"),
     SMOKE_WRITE_ENABLED: "true",
   };
   const signedUrl = "https://storage.example/comprovante?token=synthetic";
-  let route, photo;
+  const packageId = "12345678-1234-1234-1234-123456789abc";
+  const packageRoute = `/api/v1/pacotes-comprovacao/${packageId}`;
+  let route, photo, key;
   const steps = [
     (url) => {
       assert.equal(url.pathname, "/healthz");
@@ -62,7 +65,7 @@ test("jornada verifica a revisão, baixa o comprovante e só então aprova", asy
       assert.equal(url.pathname, "/api/v1/entregas/xml");
       assert.equal(init.headers.Authorization, `Bearer ${env.TEST_OPERATOR_TOKEN}`);
       const { xmlContent, driverId } = JSON.parse(init.body);
-      const key = /Id="NFe(\d{44})"/.exec(xmlContent)?.[1];
+      key = /Id="NFe(\d{44})"/.exec(xmlContent)?.[1];
       assert.ok(key);
       assert.equal(driverId, "driver");
       route = `/api/v1/entregas/${key}`;
@@ -89,6 +92,32 @@ test("jornada verifica a revisão, baixa o comprovante e só então aprova", asy
       assert.deepEqual(JSON.parse(init.body), { decisao: "APROVAR" });
       return Response.json({ status: "CONFERIDO" });
     },
+    (url, init) => {
+      assert.equal(url.pathname, "/api/v1/pacotes-comprovacao");
+      assert.equal(init.headers.Authorization, `Bearer ${env.TEST_FINANCE_TOKEN}`);
+      assert.deepEqual(JSON.parse(init.body), { embarcadorId: key.slice(6, 20), entregaIds: [key], formato: "ZIP" });
+      return Response.json({ id: packageId, status: "PROCESSANDO" }, { status: 202 });
+    },
+    url => {
+      assert.equal(url.pathname, packageRoute);
+      return Response.json({ status: "PROCESSANDO" });
+    },
+    url => {
+      assert.equal(url.pathname, packageRoute);
+      return Response.json({ status: "PRONTO", urlDownload: `${packageRoute}/arquivo?signature=synthetic` });
+    },
+    (url, init) => {
+      assert.equal(url.pathname, `${packageRoute}/arquivo`);
+      assert.equal(new Headers(init.headers).has("authorization"), false);
+      const files = {
+        [`fotos/${key}.png`]: new Uint8Array(photo),
+        "resumo.json": Buffer.from(JSON.stringify({ id: packageId, quantidadeEntregas: 1, entregas: [{ id: key }] })),
+      };
+      const arquivos = Object.entries(files).map(([arquivo, bytes]) =>
+        ({ arquivo, sha256: createHash("sha256").update(bytes).digest("hex") }));
+      files["manifesto.json"] = Buffer.from(JSON.stringify({ algoritmo: "SHA-256", arquivos }));
+      return new Response(zipSync(files), { headers: { "Content-Type": "application/zip" } });
+    },
   ];
   const fetcher = async (url, init) => {
     const step = steps.shift();
@@ -97,8 +126,8 @@ test("jornada verifica a revisão, baixa o comprovante e só então aprova", asy
   };
 
   await assert.rejects(verifyJourney({ ...env, SMOKE_WRITE_ENABLED: "false" }, fetcher), /tenant dedicado/);
-  assert.equal(steps.length, 7);
-  await verifyJourney(env, fetcher, () => {});
+  assert.equal(steps.length, 11);
+  await verifyJourney(env, fetcher, () => {}, { verifyPackage: true, wait: async () => {} });
   assert.equal(steps.length, 0);
 });
 
@@ -142,3 +171,5 @@ test("retenção simula por padrão, remove só fotos vencidas e interrompe em f
   await assert.rejects(cleanupProofs(client, "proofs", { now, apply: true }), /listagem|listar/);
   assert.equal(removed.length, 1);
 });
+import { createHash } from "node:crypto";
+import { zipSync } from "fflate";

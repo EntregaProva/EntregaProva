@@ -22,6 +22,7 @@ export async function emulatorFixture() {
   const tokens: Record<string, string> = {};
   const users = [
     { name: "operator", role: "operator", tenantId: tenant },
+    { name: "financeiro", role: "financeiro", tenantId: tenant },
     { name: "driver", role: "driver", tenantId: tenant },
     { name: "otherDriver", role: "driver", tenantId: tenant },
     { name: "otherTenant", role: "operator", tenantId: otherTenant },

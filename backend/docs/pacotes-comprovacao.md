@@ -6,7 +6,7 @@ Os comprovantes continuam no bucket privado existente do Supabase em produção.
 
 ## Solicitação e acompanhamento
 
-1. Autenticar como `admin` ou `operator` e obter um ID token Firebase.
+1. Autenticar como `admin`, `operator` ou `financeiro` e obter um ID token Firebase.
 2. Enviar `POST /api/v1/pacotes-comprovacao` com `Authorization: Bearer TOKEN` e
    `Content-Type: application/json`.
 
@@ -48,11 +48,9 @@ do emitente. O período opcional filtra `criadoEm` (importação), com limites
 inclusivos; início e fim devem ser informados juntos em UTC com milissegundos.
 As chaves são selecionadas pelo cliente e verificadas pelo servidor.
 
-O papel `financeiro` ainda não existe no middleware do projeto. O acesso segue
-os papéis atuais `admin` e `operator`, pendente de alinhamento com Produto.
-Esta versão gera ZIP. A opção PDF mencionada no OpenAPI externo é recusada
-explicitamente com `400`. O schema complementar versiona o contrato implementado
-dentro de `backend/`; sua consolidação no repositório de documentação é pendente.
+O papel `financeiro` precisa ser atribuído via custom claims do Firebase Admin
+no mesmo tenant. Este papel tem acesso à criação e consulta de pacotes.
+Esta versão gera ZIP. A opção PDF é recusada explicitamente com `400`.
 
 ## Processamento, retomada e integridade
 
@@ -80,4 +78,21 @@ dentro do backend. Os testes de contrato usam HTTP via Supertest, extraem o ZIP
 e recalculam seus hashes. O teste de integração importa a NF-e, envia e aprova o
 comprovante, solicita o pacote e baixa seu ZIP com Auth, Firestore e Storage
 emulados. O adaptador Supabase é verificado com SDK real e HTTP simulado.
-Validação com bucket Supabase real e homologação publicada são etapas posteriores.
+## Homologação publicada
+
+Em `backend/`, execute `npm run verify:package` com as variáveis de ambiente
+abaixo disponíveis no processo. A execução cria uma NF-e e um comprovante
+sintéticos, aprova a entrega, solicita o pacote e confere o ZIP e seus hashes.
+
+| Variável | Valor |
+|---|---|
+| `TARGET_API_URL` | Origem HTTPS da API publicada |
+| `EXPECTED_API_REVISION` | SHA completo esperado em `/healthz` |
+| `TEST_SMOKE_TENANT` | Tenant dedicado com prefixo `homologacao-` |
+| `TEST_OPERATOR_TOKEN` | ID token Firebase de um operador de teste |
+| `TEST_DRIVER_TOKEN` | ID token Firebase de um motorista de teste |
+| `TEST_FINANCE_TOKEN` | ID token Firebase do financeiro de teste para validar esse papel. Se omitido, o operador solicita o pacote. |
+| `SMOKE_WRITE_ENABLED` | `true` para autorizar gravações sintéticas no tenant dedicado |
+
+Use tokens recentes do mesmo tenant e configure-os no ambiente do processo.
+O teste cria registros sintéticos que ficam no tenant dedicado após a execução.
