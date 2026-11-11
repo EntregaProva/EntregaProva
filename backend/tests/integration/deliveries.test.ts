@@ -39,12 +39,12 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
     expect((await request(f.app).post(`/api/v1/entregas/${key}/conferencia`)
       .auth(f.tokens.operator, { type: "bearer" }).send({ decisao: "APROVAR" })).status).toBe(200);
     const created = await request(f.app).post("/api/v1/pacotes-comprovacao")
-      .auth(f.tokens.operator, { type: "bearer" }).send({ embarcadorId: key.slice(6, 20), entregaIds: [key] });
+      .auth(f.tokens.financeiro, { type: "bearer" }).send({ embarcadorId: key.slice(6, 20), entregaIds: [key] });
     expect(created.status).toBe(202);
     const url = created.headers.location;
     let job;
     for (let attempt = 0; attempt < 100; attempt++) {
-      job = await request(f.app).get(url).auth(f.tokens.operator, { type: "bearer" });
+      job = await request(f.app).get(url).auth(f.tokens.financeiro, { type: "bearer" });
       if (job.body.status !== "PROCESSANDO") break;
       await new Promise(resolve => setTimeout(resolve, 50));
     }

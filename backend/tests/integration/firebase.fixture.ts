@@ -23,6 +23,7 @@ export async function emulatorFixture() {
   const users = [
     { name: "admin", role: "admin", tenantId: tenant },
     { name: "operator", role: "operator", tenantId: tenant },
+    { name: "financeiro", role: "financeiro", tenantId: tenant },
     { name: "driver", role: "driver", tenantId: tenant },
     { name: "otherDriver", role: "driver", tenantId: tenant },
     { name: "otherTenant", role: "operator", tenantId: otherTenant },

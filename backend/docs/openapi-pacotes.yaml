@@ -10,7 +10,7 @@ security:
 paths:
   /pacotes-comprovacao:
     post:
-      summary: Solicita pacote ZIP para admin ou operator do tenant autenticado
+      summary: Solicita pacote ZIP para admin, operator ou financeiro do tenant autenticado
       requestBody:
         required: true
         content:
@@ -35,7 +35,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Id'
     get:
-      summary: Consulta o processamento e renova o link de download
+      summary: Consulta o pacote do tenant e renova o link para admin, operator ou financeiro
       responses:
         '200':
           description: Estado atual; falhas de geração aparecem como FALHOU e erro
