@@ -8,7 +8,7 @@ interface AsyncState<T> {
 }
 
 // Carrega dados e informa os 3 estados da tela: carregando, erro ou dados.
-// "loader" precisa ser uma função estável (declarada fora do componente).
+// Mantenha a referência do loader estável enquanto os parâmetros forem os mesmos.
 export function useAsyncData<T>(loader: () => Promise<T>) {
   const [state, setState] = useState<AsyncState<T>>({ data: null, error: null, loading: true });
   const [tentativa, setTentativa] = useState(0);
@@ -28,6 +28,9 @@ export function useAsyncData<T>(loader: () => Promise<T>) {
     };
   }, [loader, tentativa]);
 
-  const reload = useCallback(() => setTentativa((t) => t + 1), []);
+  const reload = useCallback(() => {
+    setState((s) => ({ ...s, loading: true, error: null }));
+    setTentativa((t) => t + 1);
+  }, []);
   return { ...state, reload };
 }

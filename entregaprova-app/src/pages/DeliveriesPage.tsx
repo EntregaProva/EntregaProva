@@ -1,12 +1,12 @@
-import { listDeliveries } from "../api/deliveries.ts";
-import { useAsyncData } from "../hooks/useAsyncData.ts";
+import { useDeliveryPages } from "../hooks/useDeliveryPages.ts";
+import DeliveryPagination from "../components/DeliveryPagination.tsx";
 import StateMessage from "../components/StateMessage.tsx";
 import StatsGrid from "../components/StatsGrid.tsx";
 import DeliveriesTable from "../components/DeliveriesTable.tsx";
 import type { View } from "../views.ts";
 
 export default function DeliveriesPage({ onNavigate }: { onNavigate: (view: View) => void }) {
-  const { data, error, loading, reload } = useAsyncData(listDeliveries);
+  const { data, error, loading, reload, pagination } = useDeliveryPages();
 
   return (
     <>
@@ -26,7 +26,7 @@ export default function DeliveriesPage({ onNavigate }: { onNavigate: (view: View
       {!loading && !error && data && data.length === 0 && (
         <StateMessage
           kind="empty"
-          message="Nenhuma entrega ainda. Importe um XML de NF-e 4.00 para criar a primeira."
+          message={pagination.previous ? "Nenhuma entrega nesta página." : "Nenhuma entrega ainda. Importe um XML de NF-e 4.00 para criar a primeira."}
           actionLabel="Importar XML"
           onAction={() => onNavigate("importar")}
         />
@@ -37,6 +37,7 @@ export default function DeliveriesPage({ onNavigate }: { onNavigate: (view: View
           <DeliveriesTable deliveries={data} />
         </>
       )}
+      <DeliveryPagination {...pagination} disabled={loading} />
     </>
   );
 }

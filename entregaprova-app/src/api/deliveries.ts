@@ -20,8 +20,9 @@ export interface Delivery {
 }
 
 interface BackendProof {
-  arquivoUrl?: string;
-  expiraEm?: string;
+  arquivoDisponivel?: boolean;
+  arquivoUrl?: string | null;
+  expiraEm?: string | null;
   recebedorNome?: string;
   dataHoraEntrega?: string;
 }
@@ -45,22 +46,31 @@ function adaptDelivery(raw: BackendDelivery): Delivery {
     recipient: raw.destinatario ?? "",
     status: raw.status ?? "PENDENTE",
     createdAt: raw.criadoEm ?? "",
-    ...(proof?.arquivoUrl ? {
+    ...(proof?.arquivoDisponivel !== false && proof?.arquivoUrl ? {
       proof: {
         photoUrl: proof.arquivoUrl,
         receiverName: proof.recebedorNome ?? "",
         capturedAt: proof.dataHoraEntrega ?? "",
-        expiresAt: proof.expiraEm,
+        expiresAt: proof.expiraEm ?? undefined,
       },
     } : {}),
   };
 }
 
-// BLOQUEIO DE CONTRATO: o backend ainda não implementa GET /deliveries.
-// A rota e o formato da resposta da listagem precisam ser fechados com o backend.
-export async function listDeliveries(): Promise<Delivery[]> {
-  const raw = await apiFetch<BackendDelivery[]> ("/deliveries");
-  return raw.map(adaptDelivery);
+export async function listDeliveries(cursor: string | null, status?: DeliveryStatus) {
+  const params = new URLSearchParams();
+  if (cursor) params.set("cursor", cursor);
+  if (status) params.set("status", status);
+  const query = params.toString();
+  const page = await apiFetch<{ itens: BackendDelivery[]; proximoCursor: string | null }>(
+    query ? `/deliveries?${query}` : "/deliveries",
+  );
+  return { items: page.itens.map(adaptDelivery), nextCursor: page.proximoCursor };
+}
+
+export async function getDelivery(id: string): Promise<Delivery> {
+  const raw = await apiFetch<BackendDelivery>(`/deliveries/${encodeURIComponent(id)}`);
+  return adaptDelivery(raw);
 }
 
 export async function importXml(file: File, driverId: string): Promise<Delivery> {
@@ -98,35 +108,6 @@ export function sendProof(input: ProofInput): Promise<ProofSubmissionResult> {
     body,
     headers: { "Idempotency-Key": input.idempotencyKey },
   });
-}
-
-export interface ReviewItem {
-  deliveryId: string;
-  invoiceNumber: string;
-  accessKey: string;
-  recipient: string;
-  xml: { invoiceNumber: string; accessKey: string; recipient: string };
-  proof: Proof;
-}
-
-// BLOQUEIO DE CONTRATO: falta GET /deliveries/review. A resposta deve trazer
-// IDs de 44 dígitos; a URL temporária vem da leitura autorizada de cada entrega.
-export async function listReviewQueue(): Promise<ReviewItem[]> {
-  const queue = await apiFetch<Array<BackendDelivery & { deliveryId?: string }>>("/deliveries/review");
-  return Promise.all(queue.map(async (entry) => {
-    const id = entry.id ?? entry.deliveryId ?? entry.chaveNFe ?? "";
-    const detail = await apiFetch<BackendDelivery>(`/deliveries/${encodeURIComponent(id)}`);
-    const adapted = adaptDelivery({ ...entry, ...detail, id });
-    if (!adapted.proof?.photoUrl) throw new Error("A entrega não trouxe um comprovante disponível para leitura.");
-    return {
-      deliveryId: adapted.id,
-      invoiceNumber: adapted.invoiceNumber,
-      accessKey: adapted.accessKey,
-      recipient: adapted.recipient,
-      xml: { invoiceNumber: adapted.invoiceNumber, accessKey: adapted.accessKey, recipient: adapted.recipient },
-      proof: adapted.proof,
-    };
-  }));
 }
 
 export type ReviewDecision = "approved" | "rejected";
