@@ -18,6 +18,7 @@
     "smoke": "node scripts/smoke.mjs",
     "verify:published": "node scripts/verify-published.mjs",
     "verify:journey": "node scripts/verify-journey.mjs",
+    "verify:package": "node scripts/verify-journey.mjs --package",
     "cleanup:proofs": "node scripts/cleanup-proofs.mjs"
   },
   "dependencies": {
