@@ -9,10 +9,11 @@ import DeliveriesPage from "./pages/DeliveriesPage.tsx";
 import ImportXmlPage from "./pages/ImportXmlPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import ReviewPage from "./pages/ReviewPage.tsx";
+import RegisterUserPage from "./pages/RegisterUserPage.tsx";
 import type { View } from "./views.ts";
 
 const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
-  admin: ["entregas", "importar", "capturar", "conferir"],
+  admin: ["entregas", "importar", "capturar", "conferir", "usuarios"],
   operator: ["entregas", "importar", "conferir"],
   driver: ["entregas", "capturar"],
 };
@@ -51,6 +52,7 @@ function Shell() {
         {view === "importar" && role !== "driver" && <ImportXmlPage onNavigate={navigate} />}
         {view === "capturar" && (role === "driver" || role === "admin") && <CapturePage onNavigate={navigate} />}
         {view === "conferir" && role !== "driver" && <ReviewPage onNavigate={navigate} />}
+        {view === "usuarios" && role === "admin" && <RegisterUserPage />}
         <footer>© 2026 EntregaProva · Da entrega à comprovação, sem perder o controle.</footer>
       </main>
     </>

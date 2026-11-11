@@ -1,8 +1,9 @@
 import type { Firestore } from "firebase-admin/firestore";
+import type { Auth } from "firebase-admin/auth";
 import type { ProofStorage } from "./services/proof-storage.js";
 
 export interface AppDependencies {
-  auth: {
+  auth: Pick<Auth, "createUser" | "setCustomUserClaims" | "deleteUser"> & {
     verifyIdToken(token: string): Promise<{ uid: string; tenantId?: unknown; role?: unknown }>;
   };
   db: Pick<Firestore, "doc" | "collection" |"runTransaction">;

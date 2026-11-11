@@ -4,6 +4,7 @@ import { createDeliveryControllers } from "../controllers/delivery.controller.js
 import { uploadProof } from "../config/multer.js";
 import { AppDependencies } from "../dependencies.js";
 import { createProofPackageControllers } from "../controllers/proof-package.controller.js";
+import { createUserController } from "../controllers/user.controller.js";
 
 export function createRoutes(deps: AppDependencies) {
   const routes = Router();
@@ -12,6 +13,7 @@ export function createRoutes(deps: AppDependencies) {
   // The download capability is short-lived and verified by the package service.
   routes.get("/pacotes-comprovacao/:id/arquivo", packages.download);
   routes.use(authenticateToken(deps.auth));
+  routes.post("/usuarios", requireRole(["admin"]), createUserController(deps));
   routes.post("/pacotes-comprovacao", requireRole(["admin", "operator"]), packages.create);
   routes.get("/pacotes-comprovacao/:id", requireRole(["admin", "operator"]), packages.get);
   routes.get(["/entregas", "/deliveries"], requireRole(["admin", "operator", "driver"]), c.listDeliveries);
