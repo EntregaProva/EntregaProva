@@ -19,7 +19,7 @@ const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
 };
 
 function Shell() {
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, loading } = useAuth();
   const [view, setView] = useState<View>("entregas");
   const allowedViews = role ? VIEWS_BY_ROLE[role] : [];
 
@@ -34,10 +34,7 @@ function Shell() {
       </div>
     );
   }
-  if (!user) return <LoginPage />;
-  if (!role) {
-    return <div className="login-wrap"><div className="panel form-panel"><div className="alert error" role="alert">Sua conta entrou, mas não recebeu um papel válido (admin, operator ou driver) nas claims do token. O backend precisa corrigir o seed e você deve entrar novamente.</div><button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button></div></div>;
-  }
+  if (!user || !role) return <LoginPage user={user} />;
 
   const navigate = (next: View) => {
     if (allowedViews.includes(next)) setView(next);
