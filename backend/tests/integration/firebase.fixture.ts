@@ -21,6 +21,7 @@ export async function emulatorFixture() {
   const otherTenant = `other-${run}`;
   const tokens: Record<string, string> = {};
   const users = [
+    { name: "admin", role: "admin", tenantId: tenant },
     { name: "operator", role: "operator", tenantId: tenant },
     { name: "financeiro", role: "financeiro", tenantId: tenant },
     { name: "driver", role: "driver", tenantId: tenant },
@@ -49,7 +50,7 @@ export async function emulatorFixture() {
     }
   };
   return {
-    app, db, storage, tenant, otherTenant, tokens, signer, driverId: `driver-${run}`, clear,
+    app, auth, db, storage, tenant, otherTenant, tokens, signer, driverId: `driver-${run}`, clear,
     async dispose() {
       await clear();
       await auth.deleteUsers(users.map(user => `${user.name}-${run}`));

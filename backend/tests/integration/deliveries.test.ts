@@ -18,6 +18,21 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
     .set("Idempotency-Key", "integration-proof").field("recebedor", "RECEBEDOR SINTETICO")
     .field("dataHora", "2026-11-05T10:00:00-03:00").attach("foto", jpeg, { filename: "foto.jpg", contentType: "image/jpeg" });
 
+  it("cadastra conta Firebase com papel e tenant derivados do cadastro autorizado", async () => {
+    const email = `novo-${f.tenant}@example.test`;
+    const post = () => request(f.app).post("/api/v1/usuarios").auth(f.tokens.admin, { type: "bearer" });
+    const created = await post().send({ email, role: "driver" });
+    expect(created.status).toBe(201);
+    const uid = created.body.uid;
+    try {
+      expect((await f.auth.getUser(uid)).customClaims).toEqual({ tenantId: f.tenant, role: "driver" });
+      expect((await post().send({ email, role: "operator" })).status).toBe(409);
+      expect((await f.auth.getUser(uid)).customClaims).toEqual({ tenantId: f.tenant, role: "driver" });
+    } finally {
+      await f.auth.deleteUser(uid);
+    }
+  });
+
   it("US-05: importa, comprova, confere e baixa pacote com manifesto usando os três emuladores", async () => {
     expect((await importNote()).status).toBe(201);
     expect((await proof()).status).toBe(200);

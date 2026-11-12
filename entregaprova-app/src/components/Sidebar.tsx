@@ -11,10 +11,11 @@ const ITENS: { view: View; icon: string; label: string }[] = [
   { view: "importar", icon: "↑", label: "Importar XML" },
   { view: "capturar", icon: "◉", label: "Capturar comprovante" },
   { view: "conferir", icon: "⇄", label: "Conferir comprovantes" },
+  { view: "usuarios", icon: "+", label: "Cadastrar usuário" },
 ];
 
 const VIEWS_BY_ROLE: Record<SidebarProps["role"], View[]> = {
-  admin: ["entregas", "importar", "capturar", "conferir"],
+  admin: ["entregas", "importar", "capturar", "conferir", "usuarios"],
   operator: ["entregas", "importar", "conferir"],
   driver: ["entregas", "capturar"],
 };

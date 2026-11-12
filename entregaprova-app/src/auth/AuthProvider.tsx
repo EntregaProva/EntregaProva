@@ -3,6 +3,12 @@ import { getIdTokenResult, onAuthStateChanged, signInWithEmailAndPassword, signO
 import { auth } from "../firebase.ts";
 import { AuthContext, type AuthContextValue } from "./useAuth.ts";
 
+async function readRole(user: User, refresh = false) {
+  const { claims } = await getIdTokenResult(user, refresh);
+  const role = claims.role;
+  return role === "admin" || role === "operator" || role === "driver" ? role : null;
+}
+
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<"admin" | "operator" | "driver" | null>(null);
@@ -20,10 +26,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(true);
       try {
-        const token = await getIdTokenResult(u);
-        const value = token.claims.role;
+        const value = await readRole(u);
         if (currentRequest === requestId) {
-          setRole(value === "admin" || value === "operator" || value === "driver" ? value : null);
+          setRole(value);
         }
       } catch {
         if (currentRequest === requestId) setRole(null);
@@ -42,6 +47,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         await signInWithEmailAndPassword(auth, email, password);
       },
       signOut: () => fbSignOut(auth),
+      refreshRole: async () => {
+        if (!user) return;
+        const value = await readRole(user, true);
+        if (auth.currentUser === user) setRole(value);
+      },
     }),
     [user, role, loading]
   );
