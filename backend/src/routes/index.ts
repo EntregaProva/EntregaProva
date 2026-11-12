@@ -15,6 +15,7 @@ export function createRoutes(deps: AppDependencies) {
   routes.get("/pacotes-comprovacao/:id/arquivo", packages.download);
   routes.post("/cadastros", createRegistrationController(deps));
   routes.use(authenticateToken(deps.auth));
+  routes.post("/usuarios", requireRole(["admin"]), createUserController(deps));
   const authorizePackages = requireRole(["admin", "operator", "financeiro"]);
   routes.post("/pacotes-comprovacao", authorizePackages, packages.create);
   routes.get("/pacotes-comprovacao/:id", authorizePackages, packages.get);

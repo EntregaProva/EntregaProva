@@ -18,10 +18,12 @@ const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
   driver: ["entregas", "capturar"],
 };
 
+const NO_VIEWS: View[] = [];
+
 function Shell() {
   const { user, role, loading } = useAuth();
   const [view, setView] = useState<View>("entregas");
-  const allowedViews = role ? VIEWS_BY_ROLE[role] : [];
+  const allowedViews = role ? VIEWS_BY_ROLE[role] : NO_VIEWS;
 
   useEffect(() => {
     if (allowedViews.length && !allowedViews.includes(view)) setView(allowedViews[0]);
