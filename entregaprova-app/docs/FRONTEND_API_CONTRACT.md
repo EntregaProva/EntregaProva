@@ -1,13 +1,13 @@
 # Contrato de integração do frontend EntregaProva
 
-Baseado nas rotas atuais em `backend/src/routes/index.ts` e nos campos de `backend/src/controllers/delivery.controller.ts` (checkout local lido em 04/11/2026).
+Baseado nas rotas atuais em `backend/src/routes/index.ts` e nos campos de `backend/src/controllers/delivery.controller.ts` (checkout local lido em 10/11/2026).
 
 ## Geral
 
 - Base local: `http://localhost:3000/api/v1`.
 - Todas as rotas de jornada exigem `Authorization: Bearer <Firebase ID token>`.
 - Empresa e papel vêm das claims `tenantId` e `role`; papéis aceitos: `admin`, `operator`, `driver`.
-- A resposta atual do backend usa nomes em português e status `PENDENTE`, `COMPROVADO`, `CONFERIDO`, `REJEITADO`. O frontend os adapta para seus tipos e rótulos.
+- A resposta atual do backend usa nomes em português e status `PENDENTE`, `COMPROVADO`, `CONFERIDO`, `REJEITADO`. O frontend normaliza a caixa, valida os valores e os adapta para rótulos amigáveis.
 
 ## Rotas disponíveis no backend
 
@@ -22,7 +22,7 @@ O backend também mantém aliases em português (`/entregas/xml`, `/entregas/{id
 
 ## Bloqueios de backend para as telas de lista
 
-- `GET /deliveries` ainda não existe. A lista principal e a tela de captura continuarão em erro até o backend implementar uma consulta paginada por tenant e, para `driver`, por UID do motorista.
+- `GET /deliveries` ainda não existe. A lista principal, indicadores e tela de captura continuarão em erro até o backend implementar uma consulta paginada por tenant e, para `driver`, por UID do motorista.
 - `GET /deliveries/review` ainda não existe. O backend precisa implementá-la antes de `GET /deliveries/:id`, filtrar `COMPROVADO`, restringir a `admin`/`operator` e fechar o formato paginado.
 - Esta cópia espera que a fila retorne IDs de entrega; para cada ID, o frontend chama a leitura autorizada `GET /deliveries/{id}` e usa a URL assinada. O backend deve confirmar esse formato na reunião de contrato.
 - O backend aceita `driverId` mas não valida que o UID pertence a um motorista da mesma empresa. A importação pede o UID; a seleção segura depende de uma rota/consulta de motoristas autorizados e validação no backend.
@@ -41,7 +41,7 @@ interface Delivery {
   invoiceNumber: string;
   accessKey: string;
   recipient: string;
-  status: "PENDENTE" | "COMPROVADO" | "CONFERIDO" | "REJEITADO" | string;
+  status: "PENDENTE" | "COMPROVADO" | "CONFERIDO" | "REJEITADO";
   createdAt: string;
   proof?: { photoUrl: string; receiverName: string; capturedAt: string; expiresAt?: string };
 }
