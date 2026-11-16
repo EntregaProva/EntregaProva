@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AuthProvider from "./auth/AuthProvider.tsx";
 import { useAuth } from "./auth/useAuth.ts";
 import Sidebar from "./components/Sidebar.tsx";
@@ -18,9 +18,9 @@ const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
 };
 
 function Shell() {
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, authIssue, loading, signOut } = useAuth();
   const [view, setView] = useState<View>("entregas");
-  const allowedViews = role ? VIEWS_BY_ROLE[role] : [];
+  const allowedViews = useMemo(() => role ? VIEWS_BY_ROLE[role] : [], [role]);
 
   useEffect(() => {
     if (allowedViews.length && !allowedViews.includes(view)) setView(allowedViews[0]);
@@ -35,7 +35,7 @@ function Shell() {
   }
   if (!user) return <LoginPage />;
   if (!role) {
-    return <div className="login-wrap"><div className="panel form-panel"><div className="alert error" role="alert">Sua conta entrou, mas não recebeu um papel válido (admin, operator ou driver) nas claims do token. O backend precisa corrigir o seed e você deve entrar novamente.</div><button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button></div></div>;
+    return <div className="login-wrap"><div className="panel form-panel"><div className="alert error" role="alert">{authIssue ?? "Não foi possível validar as permissões desta conta."}</div><button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button></div></div>;
   }
 
   const navigate = (next: View) => {
