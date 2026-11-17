@@ -14,7 +14,7 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-entregaprova \"vitest run tests/security/firestore-rules.test.ts\"",
     "test:emulator": "tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json \"npm run test:report\"",
     "test:report": "vitest run --maxWorkers=2 --coverage --reporter=default --reporter=junit && node scripts/check-coverage.mjs",
-    "test:smoke": "node --test scripts/smoke.check.mjs",
+    "test:smoke": "node --test scripts/smoke.check.mjs scripts/verify-published-ci.check.mjs",
     "smoke": "node scripts/smoke.mjs",
     "verify:published": "node scripts/verify-published.mjs",
     "verify:journey": "node scripts/verify-journey.mjs",

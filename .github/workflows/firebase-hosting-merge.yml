@@ -16,15 +16,35 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+
       - name: Publicar o SHA aprovado no Render e verificar a API
         run: node backend/scripts/deploy-render.mjs
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
           TARGET_API_URL: ${{ vars.API_BASE_URL }}
           EXPECTED_API_REVISION: ${{ github.sha }}
+
+      - name: Verificar autorização publicada com tokens novos
+        timeout-minutes: 5
+        run: node backend/scripts/verify-published-ci.mjs
+        env:
+          TARGET_API_URL: ${{ vars.API_BASE_URL }}
+          EXPECTED_API_REVISION: ${{ github.sha }}
+          FIREBASE_WEB_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          TEST_DELIVERY_ID: ${{ vars.TEST_DELIVERY_ID }}
+          TEST_OPERATOR_EMAIL: ${{ secrets.TEST_OPERATOR_EMAIL }}
+          TEST_OPERATOR_PASSWORD: ${{ secrets.TEST_OPERATOR_PASSWORD }}
+          TEST_DRIVER_EMAIL: ${{ secrets.TEST_DRIVER_EMAIL }}
+          TEST_DRIVER_PASSWORD: ${{ secrets.TEST_DRIVER_PASSWORD }}
+          TEST_OTHER_DRIVER_EMAIL: ${{ secrets.TEST_OTHER_DRIVER_EMAIL }}
+          TEST_OTHER_DRIVER_PASSWORD: ${{ secrets.TEST_OTHER_DRIVER_PASSWORD }}
+          TEST_OTHER_TENANT_EMAIL: ${{ secrets.TEST_OTHER_TENANT_EMAIL }}
+          TEST_OTHER_TENANT_PASSWORD: ${{ secrets.TEST_OTHER_TENANT_PASSWORD }}
+
   deploy-hosting:
     needs: deploy-api
     runs-on: ubuntu-latest
