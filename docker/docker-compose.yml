@@ -10,6 +10,7 @@ services:
       - ../firebase.json:/workspace/firebase.json:ro
       - ../.firebaserc:/workspace/.firebaserc:ro
       - ../firestore.rules:/workspace/firestore.rules:ro
+      - ../firestore.indexes.json:/workspace/firestore.indexes.json:ro
       - ../storage.rules:/workspace/storage.rules:ro
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9099/"]

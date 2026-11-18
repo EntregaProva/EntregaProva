@@ -3,9 +3,26 @@ import { getIdTokenResult, onAuthStateChanged, signInWithEmailAndPassword, signO
 import { auth, firebaseConfigError } from "../firebase.ts";
 import { AuthContext, type AuthContextValue } from "./useAuth.ts";
 
+type Role = AuthContextValue["role"];
+type RoleCheck = { role: Role; issue: string | null };
+
+async function readRole(user: User, refresh = false): Promise<RoleCheck> {
+  const { claims } = await getIdTokenResult(user, refresh);
+  const value = claims.role;
+  const tenantId = claims.tenantId;
+  if (value === undefined || value === null) return { role: null, issue: null };
+  if (value !== "admin" && value !== "operator" && value !== "driver") {
+    return { role: null, issue: "Sua conta não tem um papel aceito pela API. Use admin, operator ou driver; no emulador, recrie as contas com npm run seed." };
+  }
+  if (typeof tenantId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(tenantId)) {
+    return { role: null, issue: "Sua conta não tem a claim tenantId válida exigida pela API. Atualize as claims do backend e entre novamente." };
+  }
+  return { role: value, issue: null };
+}
+
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<"admin" | "operator" | "driver" | null>(null);
+  const [role, setRole] = useState<Role>(null);
   const [authIssue, setAuthIssue] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,18 +39,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(true);
       try {
-        // Force refresh so a user receives claims just added by the emulator seed.
-        const token = await getIdTokenResult(u, true);
-        const value = token.claims.role;
-        const tenantId = token.claims.tenantId;
+        // Force refresh so new accounts can receive claims just added by the registration flow or emulator seed.
+        const result = await readRole(u, true);
         if (currentRequest === requestId) {
-          if (value !== "admin" && value !== "operator" && value !== "driver") {
-            setAuthIssue("Sua conta não tem um papel aceito pela API. Use admin, operator ou driver; no emulador, recrie as contas com npm run seed.");
-          } else if (typeof tenantId !== "string" || !tenantId.trim()) {
-            setAuthIssue("Sua conta não tem a claim tenantId exigida pela API. Atualize o seed do backend e entre novamente.");
-          } else {
-            setRole(value);
-          }
+          setRole(result.role);
+          setAuthIssue(result.issue);
         }
       } catch {
         if (currentRequest === requestId) {
@@ -57,6 +67,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         await signInWithEmailAndPassword(auth, email, password);
       },
       signOut: () => fbSignOut(auth),
+      refreshRole: async () => {
+        if (!user) return;
+        const result = await readRole(user, true);
+        if (auth.currentUser === user) {
+          setRole(result.role);
+          setAuthIssue(result.issue);
+        }
+      },
     }),
     [user, role, authIssue, loading]
   );

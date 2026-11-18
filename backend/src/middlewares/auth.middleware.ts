@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDependencies } from "../dependencies.js";
 
-export type Role = "admin" | "operator" | "driver";
+const roles = ["admin", "operator", "driver", "financeiro"] as const;
+export type Role = typeof roles[number];
 export interface AuthenticatedUser { uid: string; tenantId: string; role: Role }
 
 declare global {
@@ -18,7 +19,7 @@ export const authenticateToken = (auth: AppDependencies["auth"]) =>
     try {
       const { tenantId, role, uid } = await auth.verifyIdToken(match[1]);
       if (typeof tenantId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(tenantId) ||
-          typeof role !== "string" || !["admin", "operator", "driver"].includes(role)) {
+          !roles.some(allowed => allowed === role)) {
         return res.status(403).json({ error: "Claims de tenant ou papel inválidas" });
       }
       req.user = { uid, tenantId, role: role as Role };

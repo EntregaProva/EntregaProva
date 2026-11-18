@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
@@ -17,7 +18,7 @@ jobs:
       matrix:
         include:
           - package: backend
-            node: 22
+            node: 24
           - package: entregaprova-app
             node: 22
     defaults:
@@ -40,6 +41,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm run test:smoke
+        if: matrix.package == 'backend'
       - run: npm run test:emulator
         if: matrix.package == 'backend'
 
@@ -82,3 +85,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
       - run: docker compose build
+      - run: docker build -t entregaprova-api:ci backend

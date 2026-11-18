@@ -8,11 +8,12 @@ import CapturePage from "./pages/CapturePage.tsx";
 import DeliveriesPage from "./pages/DeliveriesPage.tsx";
 import ImportXmlPage from "./pages/ImportXmlPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
+import RegisterUserPage from "./pages/RegisterUserPage.tsx";
 import ReviewPage from "./pages/ReviewPage.tsx";
 import type { View } from "./views.ts";
 
 const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
-  admin: ["entregas", "importar", "capturar", "conferir"],
+  admin: ["entregas", "importar", "capturar", "conferir", "usuarios"],
   operator: ["entregas", "importar", "conferir"],
   driver: ["entregas", "capturar"],
 };
@@ -33,10 +34,18 @@ function Shell() {
       </div>
     );
   }
-  if (!user) return <LoginPage />;
-  if (!role) {
-    return <div className="login-wrap"><div className="panel form-panel"><div className="alert error" role="alert">{authIssue ?? "Não foi possível validar as permissões desta conta."}</div><button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button></div></div>;
+  if (!user) return <LoginPage user={null} />;
+  if (authIssue) {
+    return (
+      <div className="login-wrap">
+        <div className="panel form-panel">
+          <div className="alert error" role="alert">{authIssue}</div>
+          <button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button>
+        </div>
+      </div>
+    );
   }
+  if (!role) return <LoginPage user={user} />;
 
   const navigate = (next: View) => {
     if (allowedViews.includes(next)) setView(next);
@@ -51,6 +60,7 @@ function Shell() {
         {view === "importar" && role !== "driver" && <ImportXmlPage onNavigate={navigate} />}
         {view === "capturar" && (role === "driver" || role === "admin") && <CapturePage onNavigate={navigate} />}
         {view === "conferir" && role !== "driver" && <ReviewPage onNavigate={navigate} />}
+        {view === "usuarios" && role === "admin" && <RegisterUserPage />}
         <footer>© 2026 EntregaProva · Da entrega à comprovação, sem perder o controle.</footer>
       </main>
     </>

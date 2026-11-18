@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FirebaseError } from "firebase/app";
+import { createUserWithEmailAndPassword, sendEmailVerification, type User } from "firebase/auth";
+import { apiFetch, mensagemDoErro } from "../api/client.ts";
 import { useAuth } from "../auth/useAuth.ts";
-import { firebaseConfigError } from "../firebase.ts";
+import { auth, firebaseConfigError } from "../firebase.ts";
 import "./LoginPage.css";
 
 function mensagemDeLogin(erro: unknown): string {
@@ -20,19 +22,22 @@ const passos = [
   { icon: "✓", title: "Conferência lado a lado", copy: "Compare os dados da entrega com o comprovante e registre a aprovação ou a rejeição." },
 ];
 
-export default function LoginPage() {
+export default function LoginPage({ user }: { user: User | null }) {
+  return user ? <CompleteRegistration key={user.uid} user={user} /> : <LandingPage />;
+}
+
+function LandingPage() {
   const { signIn } = useAuth();
   const [loginAberto, setLoginAberto] = useState(false);
+  const [cadastro, setCadastro] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
-  const [aviso, setAviso] = useState("");
   const emailRef = useRef<HTMLInputElement>(null);
   const focoAnteriorRef = useRef<HTMLElement | null>(null);
-  const avisoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const abrirLogin = () => {
     focoAnteriorRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -61,24 +66,23 @@ export default function LoginPage() {
     };
   }, [loginAberto]);
 
-  useEffect(() => () => {
-    if (avisoTimerRef.current) clearTimeout(avisoTimerRef.current);
-  }, []);
-
-  const mostrarAviso = (texto: string) => {
-    setAviso(texto);
-    if (avisoTimerRef.current) clearTimeout(avisoTimerRef.current);
-    avisoTimerRef.current = setTimeout(() => setAviso(""), 4200);
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErro(null);
     setEnviando(true);
     try {
-      await signIn(email.trim(), senha);
+      if (firebaseConfigError) throw new Error(firebaseConfigError);
+      if (cadastro) {
+        const { user: newUser } = await createUserWithEmailAndPassword(auth, email.trim(), senha);
+        await sendEmailVerification(newUser);
+      } else {
+        await signIn(email.trim(), senha);
+      }
     } catch (e: unknown) {
-      setErro(mensagemDeLogin(e));
+      setErro(cadastro
+        ? "Não foi possível concluir esta etapa. Se você já tem conta, entre para continuar."
+        : mensagemDeLogin(e));
     } finally {
       setEnviando(false);
     }
@@ -168,22 +172,112 @@ export default function LoginPage() {
         <section className="lp-modal" role="dialog" aria-modal="true" aria-labelledby="lp-login-title">
           <button className="lp-close" type="button" aria-label="Fechar janela de login" onClick={fecharLogin}>×</button>
           <img className="lp-modallogo" src="/logo-entregaprova.png" alt="EntregaProva" />
-          <h2 id="lp-login-title">Entrar</h2>
-          <p className="lp-modalintro">Seja bem-vindo ao EntregaProva! Por favor, efetue login para continuar :D</p>
+          <h2 id="lp-login-title">{cadastro ? "Criar conta" : "Entrar"}</h2>
+          <p className="lp-modalintro">{cadastro ? "Confirme seu e-mail para cadastrar uma pessoa física ou uma empresa." : "Seja bem-vindo ao EntregaProva! Por favor, efetue login para continuar :D"}</p>
           <form className="lp-loginform" onSubmit={handleSubmit}>
             {firebaseConfigError && <div className="alert error" role="alert">{firebaseConfigError}</div>}
             <label htmlFor="lp-email">E-mail</label>
             <div className="lp-field"><input ref={emailRef} id="lp-email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></div>
             <label htmlFor="lp-password">Senha</label>
-            <div className="lp-field"><input id="lp-password" type={mostrarSenha ? "text" : "password"} autoComplete="current-password" required value={senha} onChange={(event) => setSenha(event.target.value)} /><button type="button" className="lp-toggle" aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"} aria-pressed={mostrarSenha} onClick={() => setMostrarSenha((shown) => !shown)}>{mostrarSenha ? "Ocultar" : "Mostrar"}</button></div>
+            <div className="lp-field"><input id="lp-password" type={mostrarSenha ? "text" : "password"} autoComplete={cadastro ? "new-password" : "current-password"} minLength={cadastro ? 6 : undefined} required value={senha} onChange={(event) => setSenha(event.target.value)} /><button type="button" className="lp-toggle" aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"} aria-pressed={mostrarSenha} onClick={() => setMostrarSenha((shown) => !shown)}>{mostrarSenha ? "Ocultar" : "Mostrar"}</button></div>
             {erro && <div className="alert error" role="alert">{erro}</div>}
-            <button className="lp-submit" type="submit" disabled={enviando || Boolean(firebaseConfigError)}>{enviando ? "Entrando..." : "Entrar"}</button>
-            <button className="lp-signup" type="button" onClick={() => mostrarAviso("Para criar uma conta, solicite acesso ao administrador da sua empresa.")}>Criar uma conta</button>
+            <button className="lp-submit" type="submit" disabled={enviando || Boolean(firebaseConfigError)}>{enviando ? "Aguarde..." : cadastro ? "Criar conta" : "Entrar"}</button>
+            <button className="lp-signup" type="button" disabled={enviando} onClick={() => { setCadastro((current) => !current); setErro(null); setSenha(""); }}>{cadastro ? "Voltar ao login" : "Criar uma conta"}</button>
             <p className="lp-modalnote">Precisa de acesso? Solicite uma conta ao administrador da sua empresa.</p>
           </form>
         </section>
       </div>
-      <div className={`lp-toast${aviso ? " is-visible" : ""}`} role="status" aria-live="polite">{aviso}</div>
+
+    </div>
+  );
+}
+
+function CompleteRegistration({ user }: { user: User }) {
+  const { refreshRole, signOut } = useAuth();
+  const [verificado, setVerificado] = useState(user.emailVerified);
+  const [tipo, setTipo] = useState("cpf");
+  const [documento, setDocumento] = useState("");
+  const [papel, setPapel] = useState("admin");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+
+  const executar = async (acao: () => Promise<void>) => {
+    setEnviando(true);
+    setErro(null);
+    setMensagem(null);
+    try {
+      await acao();
+    } catch (e: unknown) {
+      setErro(mensagemDoErro(e));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const concluir = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void executar(async () => {
+      await user.getIdToken(true);
+      await apiFetch<void>("/cadastros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, documento, papel }),
+      });
+      await refreshRole();
+    });
+  };
+
+  return (
+    <div className="login-wrap">
+      <form className="panel login-card form-panel" onSubmit={concluir}>
+        <img src="/logo-entregaprova.png" alt="EntregaProva" className="login-logo" />
+        <h1>{verificado ? "Concluir cadastro" : "Confirmar e-mail"}</h1>
+        {verificado ? (
+          <>
+            <p className="muted">O cadastro cria um espaço novo. Para entrar em uma empresa existente, peça um convite ao administrador.</p>
+            <label htmlFor="tipo">Tipo de cadastro</label>
+            <select id="tipo" value={tipo} disabled={enviando} onChange={(e) => {
+              setTipo(e.target.value);
+              setDocumento("");
+              if (e.target.value === "cnpj" && papel === "driver") setPapel("admin");
+            }}>
+              <option value="cpf">Pessoa física (CPF)</option>
+              <option value="cnpj">Empresa / pessoa jurídica (CNPJ)</option>
+            </select>
+            <label htmlFor="documento">{tipo.toUpperCase()}</label>
+            <input id="documento" value={documento} onChange={(e) => setDocumento(e.target.value)}
+              inputMode={tipo === "cpf" ? "numeric" : "text"} maxLength={tipo === "cpf" ? 14 : 18}
+              required disabled={enviando} />
+            <label htmlFor="papel">Papel no novo espaço</label>
+            <select id="papel" value={papel} onChange={(e) => setPapel(e.target.value)} disabled={enviando}>
+              <option value="admin">Administrador</option>
+              <option value="operator">Operador</option>
+              {tipo === "cpf" && <option value="driver">Motorista</option>}
+            </select>
+            <button type="submit" className="button primary full" disabled={enviando}>
+              {enviando ? "Concluindo..." : "Concluir cadastro"}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="muted">Abra o link de verificação recebido no seu e-mail para continuar.</p>
+            <button type="button" className="button primary full" disabled={enviando} onClick={() => void executar(async () => {
+              await user.reload();
+              setVerificado(user.emailVerified);
+              if (!user.emailVerified) setMensagem("O e-mail ainda não foi confirmado. Confira sua caixa de entrada.");
+            })}>Já confirmei meu e-mail</button>
+            <button type="button" className="button secondary full" disabled={enviando} onClick={() => void executar(async () => {
+              await sendEmailVerification(user);
+              setMensagem("E-mail de confirmação enviado.");
+            })}>Reenviar e-mail</button>
+          </>
+        )}
+        {erro && <div className="alert error" role="alert">{erro}</div>}
+        {mensagem && <p role="status">{mensagem}</p>}
+        <button type="button" className="button secondary full" disabled={enviando}
+          onClick={() => void executar(signOut)}>Sair</button>
+      </form>
     </div>
   );
 }
