@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AuthProvider from "./auth/AuthProvider.tsx";
 import { useAuth } from "./auth/useAuth.ts";
 import Sidebar from "./components/Sidebar.tsx";
@@ -8,8 +8,8 @@ import CapturePage from "./pages/CapturePage.tsx";
 import DeliveriesPage from "./pages/DeliveriesPage.tsx";
 import ImportXmlPage from "./pages/ImportXmlPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
-import ReviewPage from "./pages/ReviewPage.tsx";
 import RegisterUserPage from "./pages/RegisterUserPage.tsx";
+import ReviewPage from "./pages/ReviewPage.tsx";
 import type { View } from "./views.ts";
 
 const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
@@ -18,12 +18,10 @@ const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
   driver: ["entregas", "capturar"],
 };
 
-const NO_VIEWS: View[] = [];
-
 function Shell() {
-  const { user, role, loading } = useAuth();
+  const { user, role, authIssue, loading, signOut } = useAuth();
   const [view, setView] = useState<View>("entregas");
-  const allowedViews = role ? VIEWS_BY_ROLE[role] : NO_VIEWS;
+  const allowedViews = useMemo(() => role ? VIEWS_BY_ROLE[role] : [], [role]);
 
   useEffect(() => {
     if (allowedViews.length && !allowedViews.includes(view)) setView(allowedViews[0]);
@@ -36,7 +34,18 @@ function Shell() {
       </div>
     );
   }
-  if (!user || !role) return <LoginPage user={user} />;
+  if (!user) return <LoginPage user={null} />;
+  if (authIssue) {
+    return (
+      <div className="login-wrap">
+        <div className="panel form-panel">
+          <div className="alert error" role="alert">{authIssue}</div>
+          <button type="button" className="button secondary" onClick={() => void signOut()}>Sair</button>
+        </div>
+      </div>
+    );
+  }
+  if (!role) return <LoginPage user={user} />;
 
   const navigate = (next: View) => {
     if (allowedViews.includes(next)) setView(next);

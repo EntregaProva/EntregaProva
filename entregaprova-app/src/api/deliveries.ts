@@ -1,6 +1,7 @@
 import { apiFetch } from "./client.ts";
 
 export type DeliveryStatus = "PENDENTE" | "COMPROVADO" | "CONFERIDO" | "REJEITADO";
+const DELIVERY_STATUSES: readonly DeliveryStatus[] = ["PENDENTE", "COMPROVADO", "CONFERIDO", "REJEITADO"];
 
 export interface Proof {
   photoUrl: string;
@@ -14,7 +15,7 @@ export interface Delivery {
   invoiceNumber: string;
   accessKey: string;
   recipient: string;
-  status: DeliveryStatus | string;
+  status: DeliveryStatus;
   createdAt: string;
   proof?: Proof;
 }
@@ -39,12 +40,16 @@ interface BackendDelivery {
 
 function adaptDelivery(raw: BackendDelivery): Delivery {
   const proof = raw.comprovante;
+  const status = (raw.status ?? "PENDENTE").trim().toUpperCase();
+  if (!DELIVERY_STATUSES.includes(status as DeliveryStatus)) {
+    throw new Error(`A API retornou um status de entrega desconhecido: ${raw.status ?? "vazio"}.`);
+  }
   return {
     id: raw.id ?? raw.chaveNFe ?? "",
     invoiceNumber: raw.numeroNF ?? "",
     accessKey: raw.chaveNFe ?? "",
     recipient: raw.destinatario ?? "",
-    status: raw.status ?? "PENDENTE",
+    status: status as DeliveryStatus,
     createdAt: raw.criadoEm ?? "",
     ...(proof?.arquivoDisponivel !== false && proof?.arquivoUrl ? {
       proof: {
@@ -77,6 +82,7 @@ export async function importXml(file: File, driverId: string): Promise<Delivery>
   const xmlContent = await file.text();
   const raw = await apiFetch<BackendDelivery>("/deliveries/xml", {
     method: "POST",
+    // O contrato é JSON; o XML vai como texto em xmlContent para o backend analisar.
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ xmlContent, driverId }),
   });

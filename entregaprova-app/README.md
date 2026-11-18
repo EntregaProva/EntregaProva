@@ -1,33 +1,31 @@
-# EntregaProva - frontend para revisão
+# EntregaProva — frontend
 
-Aplicação React, Vite e TypeScript para o painel de entregas. Esta cópia remove o arquivo legado com `INITIAL_DELIVERIES` e ajusta as chamadas às rotas que o backend já implementa.
+Este pacote contém apenas `entregaprova-app`. Não inclui backend, workflows, `.env`, `node_modules` ou `dist`.
 
-## Rodar junto ao backend
+## Autenticação local
 
-O modo recomendado está descrito no README da raiz do repositório. Com Docker Desktop e virtualização disponíveis, na raiz do projeto:
+Com Docker e Firebase Auth Emulator ativos na porta 9099, crie as contas de teste executando na raiz do repositório:
 
-```powershell
-Copy-Item .env.example .env
+```bash
 docker compose up --build
+docker compose exec backend npm run seed
 ```
 
-Em outro terminal, o README da raiz orienta executar `docker compose exec backend npm run seed`. No estado do seed lido em 04/11/2026, as claims ainda não satisfazem o middleware (`tenantId` ausente e papel `motorista` em vez de `driver`); portanto o login pode ocorrer, mas as chamadas protegidas serão recusadas até o backend corrigir o seed.
+O backend precisa criar custom claims `role` com valor `admin`, `operator` ou `driver`, e uma claim `tenantId` válida. O frontend verifica as duas claims antes de abrir o painel. Se o Auth Emulator não estiver rodando, as contas de teste não entram.
 
-## Limite de funcionamento ponta a ponta
+Contas esperadas no seed local:
 
-As telas de lista chamam `GET /api/v1/deliveries` e `GET /api/v1/deliveries/review`, que ainda não existem no backend deste checkout. Elas mostram o estado de erro da API e permitem nova tentativa; nenhum dado estático é usado como substituto. As rotas de importação, envio de comprovante, leitura individual e conferência foram alinhadas às rotas existentes. Veja `docs/FRONTEND_API_CONTRACT.md` e `REVISAO_CP2.md` para dependências e divergências restantes.
+| Papel | E-mail | Senha |
+| --- | --- | --- |
+| Admin | `admin@teste.com` | `Teste@123` |
+| Motorista | `motorista@teste.com` | `Teste@123` |
 
-## Desenvolvimento direto
+## Contrato da API
 
-O `.env` fica na raiz do repositório. O Vite executado diretamente dentro desta pasta não carrega automaticamente o arquivo pai; configure as variáveis `VITE_*` no ambiente antes de iniciar `npm run dev`. Não inclua `.env` neste pacote.
+A importação usa JSON `{ xmlContent, driverId }`; `xmlContent` carrega o XML como texto. Os status aceitos são `PENDENTE`, `COMPROVADO`, `CONFERIDO` e `REJEITADO`.
 
-## O que foi ajustado nesta cópia
+Neste checkout ainda faltam no backend `GET /api/v1/deliveries` e `GET /api/v1/deliveries/review`, necessárias para lista, captura e conferência. Detalhes em `docs/FRONTEND_API_CONTRACT.md`.
 
-- Importação envia o conteúdo do XML em JSON para `POST /deliveries/xml` e pede o UID do motorista.
-- Respostas do backend são adaptadas dos campos em português para os nomes usados pelos componentes.
-- Comprovante usa multipart `file`, campos `recebedorNome` e `dataHoraEntrega`, com `Idempotency-Key`.
-- Conferência usa `PATCH /deliveries/{id}/check` e os status reais do backend.
-- Captura filtra `PENDENTE` e `REJEITADO`, comprime a foto no navegador e preserva a mesma tentativa/chave ao repetir a operação.
-- O menu usa o papel nas claims do token para mostrar ações por perfil.
+Para Firebase real/publicado, é necessário habilitar Email/Senha, configurar a chave Firebase Web no build e criar usuários com as claims esperadas. Os workflows que fazem isso ficam fora deste pacote frontend-only.
 
-Esta cópia é para revisão. As pendências de backend e DevOps continuam descritas no relatório incluso.
+Veja `docs/FRONTEND-ONLY-CHANGES.md` para o resumo do que foi alterado.
