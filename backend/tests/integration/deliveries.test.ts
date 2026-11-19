@@ -18,17 +18,36 @@ describe.skipIf(!emulatorsReady)("Integração real Auth + Firestore + Storage e
     .set("Idempotency-Key", "integration-proof").field("recebedor", "RECEBEDOR SINTETICO")
     .field("dataHora", "2026-11-05T10:00:00-03:00").attach("foto", jpeg, { filename: "foto.jpg", contentType: "image/jpeg" });
 
-  it("cadastra conta Firebase com papel e tenant derivados do cadastro autorizado", async () => {
+  it("vincula a conta Firebase verificada somente após aceitar o convite", async () => {
     const email = `novo-${f.tenant}@example.test`;
     const post = () => request(f.app).post("/api/v1/usuarios").auth(f.tokens.admin, { type: "bearer" });
     const created = await post().send({ email, role: "driver" });
     expect(created.status).toBe(201);
-    const uid = created.body.uid;
+    const codigo: string = created.body.codigo;
+    expect(created.body.uid).toBeUndefined();
+    await expect(f.auth.getUserByEmail(email)).rejects.toMatchObject({ code: "auth/user-not-found" });
+    const { uid } = await f.auth.createUser({ email, password: "Teste@123", emailVerified: true });
     try {
+      expect((await f.auth.getUser(uid)).customClaims).toBeUndefined();
+      const response = await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=emulator-key`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: "Teste@123", returnSecureToken: true }),
+      });
+      expect(response.status).toBe(200);
+      const { idToken } = await response.json() as { idToken: string };
+      const accept = () => request(f.app).post("/api/v1/convites/aceitar").auth(idToken, { type: "bearer" }).send({ codigo });
+      expect((await accept()).status).toBe(204);
       expect((await f.auth.getUser(uid)).customClaims).toEqual({ tenantId: f.tenant, role: "driver" });
+      expect((await accept()).status).toBe(204);
+      const member = await post().send({ email, role: "driver" });
+      expect(member.status).toBe(200);
+      expect(member.body).toEqual({ uid, role: "driver" });
       expect((await post().send({ email, role: "operator" })).status).toBe(409);
       expect((await f.auth.getUser(uid)).customClaims).toEqual({ tenantId: f.tenant, role: "driver" });
     } finally {
+      const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+      await f.db.doc(`convitesUsuarios/${hash(codigo)}`).delete();
+      await f.db.doc(`cadastrosPublicos/cadastro-${hash(uid)}`).delete();
       await f.auth.deleteUser(uid);
     }
   });
