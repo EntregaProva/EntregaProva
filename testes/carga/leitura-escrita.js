@@ -32,11 +32,13 @@ export const options = {
       tags: { tipo: "escrita" },
     },
   },
-  thresholds: {
+   thresholds: {
     "http_req_duration{tipo:leitura}": ["p(95)<800"],
     "http_req_duration{tipo:escrita}": ["p(95)<1500"],
     "checks{tipo:leitura}": ["rate>0.99"],
     "checks{tipo:escrita}": ["rate>0.99"],
+    "http_reqs{tipo:leitura}": ["count>300"],
+    "http_reqs{tipo:escrita}": ["count>100"],
   },
 };
 
@@ -102,6 +104,19 @@ const importarEntrega = (token, sequencial, tags) =>
 
 // --- Ciclo de vida do teste k6 ---
 
+// Tokens ficam guardados em cada VU, nunca no retorno do setup
+let tokensDoVu;
+
+const obterTokens = () => {
+  if (!tokensDoVu) {
+    tokensDoVu = {
+      operador: login("seed-operator-a@example.test"),
+      motorista: login("seed-driver-a1@example.test"),
+    };
+  }
+  return tokensDoVu;
+};
+
 export function setup() {
   const operador = login("seed-operator-a@example.test");
   const motorista = login("seed-driver-a1@example.test");
@@ -111,13 +126,14 @@ export function setup() {
     importarEntrega(operador, baseSequencial + i, { tipo: "setup" })
   );
 
-  return { operador, motorista, baseSequencial };
+   return { baseSequencial };
 }
 
-export function leitura(data) {
+export function leitura() {
   // Distribui ~1/3 dos VUs como motorista e ~2/3 como operador
+  const { operador, motorista } = obterTokens();
   const usarMotorista = exec.vu.idInTest % 3 === 0;
-  const token = usarMotorista ? data.motorista : data.operador;
+  const token = usarMotorista ? motorista : operador;
 
   const res = http.get(`${API_URL}/api/v1/entregas?limit=20`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +148,8 @@ export function escrita(data) {
   // Offset de 1000 evita colisão com os 50 registros criados no setup
   const sequencial = data.baseSequencial + 1000 + exec.scenario.iterationInTest;
 
-  const res = importarEntrega(data.operador, sequencial, {
+  const { operador } = obterTokens();
+  const res = importarEntrega(operador, sequencial, {
     tipo: "escrita",
     rota: "POST /api/v1/entregas/xml",
   });
