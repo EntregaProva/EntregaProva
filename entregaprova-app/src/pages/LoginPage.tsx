@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, sendEmailVerification, type User } from "firebase/auth";
 import { apiFetch, mensagemDoErro } from "../api/client.ts";
+import { acceptInvitation } from "../api/users.ts";
 import { useAuth } from "../auth/useAuth.ts";
 import { auth, firebaseConfigError } from "../firebase.ts";
 import "./LoginPage.css";
@@ -195,6 +196,8 @@ function LandingPage() {
 function CompleteRegistration({ user }: { user: User }) {
   const { refreshRole, signOut } = useAuth();
   const [verificado, setVerificado] = useState(user.emailVerified);
+  const [comConvite, setComConvite] = useState(false);
+  const [codigo, setCodigo] = useState("");
   const [tipo, setTipo] = useState("cpf");
   const [documento, setDocumento] = useState("");
   const [papel, setPapel] = useState("admin");
@@ -219,11 +222,15 @@ function CompleteRegistration({ user }: { user: User }) {
     event.preventDefault();
     void executar(async () => {
       await user.getIdToken(true);
-      await apiFetch<void>("/cadastros", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, documento, papel }),
-      });
+      if (comConvite) {
+        await acceptInvitation(codigo);
+      } else {
+        await apiFetch<void>("/cadastros", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipo, documento, papel }),
+        });
+      }
       await refreshRole();
     });
   };
@@ -232,8 +239,24 @@ function CompleteRegistration({ user }: { user: User }) {
     <div className="login-wrap">
       <form className="panel login-card form-panel" onSubmit={concluir}>
         <img src="/logo-entregaprova.png" alt="EntregaProva" className="login-logo" />
-        <h1>{verificado ? "Concluir cadastro" : "Confirmar e-mail"}</h1>
-        {verificado ? (
+        <h1>{verificado ? (comConvite ? "Aceitar convite" : "Concluir cadastro") : "Confirmar e-mail"}</h1>
+        {verificado && (
+          <button type="button" className="button secondary full" disabled={enviando} onClick={() => {
+            setComConvite(!comConvite);
+            setErro(null);
+          }}>{comConvite ? "Criar meu espaço" : "Tenho um convite"}</button>
+        )}
+        {verificado && comConvite ? (
+          <>
+            <p className="muted">Use o código fornecido pelo administrador da empresa à qual deseja se vincular.</p>
+            <label htmlFor="convite">Código do convite</label>
+            <input id="convite" value={codigo} onChange={(event) => setCodigo(event.target.value)}
+              autoComplete="off" required disabled={enviando} />
+            <button type="submit" className="button primary full" disabled={enviando}>
+              {enviando ? "Aceitando..." : "Aceitar convite"}
+            </button>
+          </>
+        ) : verificado ? (
           <>
             <p className="muted">O cadastro cria um espaço novo. Para entrar em uma empresa existente, peça um convite ao administrador.</p>
             <label htmlFor="tipo">Tipo de cadastro</label>

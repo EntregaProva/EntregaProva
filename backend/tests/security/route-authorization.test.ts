@@ -15,6 +15,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "GET /api/v1/healthz": "alias do health check",
   "GET /api/v1/readyz": "alias do readiness",
   "POST /api/v1/cadastros": "cadastro público com confirmação de e-mail",
+  "POST /api/v1/convites/aceitar": "valida o token e o e-mail verificado sem exigir vínculo prévio",
   "GET /api/v1/pacotes-comprovacao/:id/arquivo": "download por capability de curta duração",
 };
 

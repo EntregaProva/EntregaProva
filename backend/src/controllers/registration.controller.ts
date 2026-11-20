@@ -62,7 +62,11 @@ export function createRegistrationController({ auth, db }: AppDependencies): Req
       const perfil = db.doc(`cadastrosPublicos/${tenantId}`);
       const papelSalvo = await db.runTransaction(async (tx) => {
         const existente = await tx.get(perfil);
-        if (existente.exists) return existente.data()?.papel as Role;
+        if (existente.exists) {
+          const dados = existente.data();
+          if (dados?.conviteId) throw new HttpError(409, "Este cadastro já está vinculado a um convite. Conclua o aceite.");
+          return dados?.papel as Role;
+        }
         tx.create(perfil, { uid: token.uid, tipo, documento: documentoValidado, papel, criadoEm: new Date() });
         return papel as Role;
       });
