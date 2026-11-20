@@ -135,6 +135,36 @@ describe("API de entregas", () => {
     expect((await send()).status).toBe(409);
   });
 
+  it.each(["inexistente", "operator-a", "driver-b"])(
+    "rejeita o motorista %s com 422 sem gravar a entrega",
+    async driverId => {
+      const res = await request(f.app).post("/api/v1/entregas/xml")
+        .auth("operator", { type: "bearer" }).send({ xmlContent: xml(), driverId });
+
+      expect(res.status).toBe(422);
+      expect(res.body).toEqual({ error: "Motorista não encontrado nesta empresa" });
+      expect(f.documents.size).toBe(0);
+    },
+  );
+
+  it("preserva a importação sem motorista e sem consulta ao Auth", async () => {
+    const res = await request(f.app).post("/api/v1/deliveries/xml")
+      .auth("operator", { type: "bearer" }).send({ xmlContent: xml() });
+
+    expect(res.status).toBe(201);
+    expect(f.documents.get(path())?.driverId).toBeNull();
+    expect(f.getUser).not.toHaveBeenCalled();
+  });
+
+  it("propaga falhas da consulta ao Auth sem gravar a entrega", async () => {
+    f.getUser.mockRejectedValueOnce(new Error("Auth indisponível"));
+    const res = await request(f.app).post("/api/v1/entregas/xml")
+      .auth("operator", { type: "bearer" }).send({ xmlContent: xml(), driverId: "driver-a" });
+
+    expect(res.status).toBe(500);
+    expect(f.documents.size).toBe(0);
+  });
+
   it("CT-33: rejeita XML grande (413) e não grava nada", async () => {
     const res = await request(f.app)
       .post("/api/v1/entregas/xml")

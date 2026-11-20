@@ -44,17 +44,27 @@ export function createDeliveryControllers(deps: AppDependencies) {
   const importXML = wrap(async (req, res) => {
     const parsed = parseNFeXML(req.body?.xmlContent);
     const driverId = req.body?.driverId;
-    if (driverId !== undefined && (!text(driverId, 128) || driverId.includes("/"))) {
-      throw new HttpError(400, "Motorista inválido");
+    const { tenantId, uid } = req.user!;
+    if (driverId !== undefined) {
+      if (!text(driverId, 128) || driverId.includes("/")) {
+        throw new HttpError(400, "Motorista inválido");
+      }
+      const driver = await deps.auth.getUser(driverId).catch((error: unknown) => {
+        if (error instanceof Error && "code" in error && error.code === "auth/user-not-found") return null;
+        throw error;
+      });
+      if (driver?.customClaims?.role !== "driver" || driver.customClaims.tenantId !== tenantId) {
+        throw new HttpError(422, "Motorista não encontrado nesta empresa");
+      }
     }
     const data = {
-      tenantId: req.user!.tenantId, chaveNFe: parsed.chave, numeroNF: parsed.numero,
+      tenantId, chaveNFe: parsed.chave, numeroNF: parsed.numero,
       emitente: parsed.emitente,
       valorTotal: parsed.valorTotal, destinatario: parsed.destinatario,
-      status: "PENDENTE", criadoEm: new Date().toISOString(), criadoPor: req.user!.uid,
+      status: "PENDENTE", criadoEm: new Date().toISOString(), criadoPor: uid,
       driverId: driverId ?? null,
     };
-    const ref = deps.db.doc(`tenants/${req.user!.tenantId}/deliveries/${parsed.chave}`);
+    const ref = deps.db.doc(`tenants/${tenantId}/deliveries/${parsed.chave}`);
     await deps.db.runTransaction(async tx => {
       if ((await tx.get(ref)).exists) throw new HttpError(409, "NF-e já importada");
       tx.create(ref, data);

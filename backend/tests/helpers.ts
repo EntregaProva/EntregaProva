@@ -66,9 +66,14 @@ export function fixture() {
     if (!users[token]) throw new Error("invalid token");
     return users[token];
   });
+  const getUser = vi.fn(async (uid: string) => {
+    const user = Object.values(users).find(candidate => candidate.uid === uid);
+    if (!user) throw Object.assign(new Error("Usuário não encontrado"), { code: "auth/user-not-found" });
+    return { uid, customClaims: { role: user.role, tenantId: user.tenantId } };
+  });
   const logger = { info: vi.fn(), error: vi.fn() };
   const deps = {
-    auth: { verifyIdToken }, db: { doc, runTransaction },
+    auth: { verifyIdToken, getUser }, db: { doc, runTransaction },
     proofStorage: createEmulatorProofStorage({ bucket: () => ({ file: (name: string) => ({
       exists: async () => [objects.has(name)],
       download: async () => {
@@ -81,5 +86,5 @@ export function fixture() {
   } as unknown as AppDependencies;
   const seed = (tenant = "tenant-a", driverId = "driver-a") =>
     documents.set(path(tenant), { status: "PENDENTE", driverId, chaveNFe: key });
-  return { app: createApp(deps), deps, documents, objects, users, read, runTransaction, save, sign, logger, seed };
+  return { app: createApp(deps), deps, documents, objects, users, getUser, read, runTransaction, save, sign, logger, seed };
 }
