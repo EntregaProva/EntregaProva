@@ -25,5 +25,3 @@ export function validateNFeKey(key: string): { isValid: boolean; reason?: string
 
   return { isValid: true };
 }
-
-export const qaQuebraBuild: number = "texto";
