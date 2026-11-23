@@ -1,4 +1,5 @@
 export function validateNFeKey(key: string): { isValid: boolean; reason?: string } {
+  debugger;
   // BVA: Tamanho estrito de 44 dígitos numéricos
   if (!/^\d{44}$/.test(key)) {
     return { isValid: false, reason: "A chave deve possuir exatamente 44 dígitos numéricos" };
