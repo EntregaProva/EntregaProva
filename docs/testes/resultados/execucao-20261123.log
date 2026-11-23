@@ -1,0 +1,117 @@
+
+> entregaprova-backend@0.1.0 test:emulator
+> tsc -p tsconfig.test.json && npx --yes firebase-tools@13.35.1 emulators:exec --only auth,firestore,storage --project demo-entregaprova --config ../firebase.json "npm run test:report"
+
+i  emulators: Starting emulators: auth, firestore, storage
+i  emulators: Detected demo project ID "demo-entregaprova", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+⚠  Unexpected rules runtime error: WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/home/marcelo-vitor/.cache/firebase/emulators/cloud-storage-rules-runtime-v1.1.3.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+
+i  Running script: npm run test:report
+
+> entregaprova-backend@0.1.0 test:report
+> vitest run --maxWorkers=2 --coverage --reporter=default --reporter=junit && node scripts/check-coverage.mjs
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90m/home/marcelo-vitor/Desenvolvimento/estudos/UnB/EntregaProva/EntregaProva/backend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m tests/api.test.ts [2m([22m[2m34 tests[22m[2m)[22m[33m 2508[2mms[22m[39m
+   [32m✓[39m Infraestrutura - health e readiness [2m(3)[22m
+     [33m[2m✓[22m[39m CT-36: readiness responde 503 quando a leitura trava[33m 2006[2mms[22m[39m
+ [32m✓[39m tests/integration/deliveries.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2921[2mms[22m[39m
+   [32m✓[39m Integração real Auth + Firestore + Storage emulados [2m(6)[22m
+     [33m[2m✓[22m[39m vincula a conta Firebase verificada somente após aceitar o convite[33m 1341[2mms[22m[39m
+     [33m[2m✓[22m[39m US-05: importa, comprova, confere e baixa pacote com manifesto usando os três emuladores[33m 428[2mms[22m[39m
+     [33m[2m✓[22m[39m salva bytes reais e confere/rejeita/reenvia; somente a assinatura é substituída[33m 394[2mms[22m[39m
+[90mstderr[2m | tests/security/firestore-rules.test.ts[2m > [22m[2mSecurity Rules deny-all (Firestore)[2m > [22m[2mCT-24: Anônimo não escreve
+[22m[39m[2026-11-23T23:34:43.654Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x12e60e13 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L6, false for 'update' @ L6
+
+ [32m✓[39m tests/security/route-authorization.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 338[2mms[22m[39m
+[90mstderr[2m | tests/security/firestore-rules.test.ts[2m > [22m[2mSecurity Rules deny-all (Firestore)[2m > [22m[2mCT-26: Autenticado não cria nem altera
+[22m[39m[2026-11-23T23:34:43.983Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x12e60e1a error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L6, false for 'update' @ L6
+
+[90mstderr[2m | tests/security/firestore-rules.test.ts[2m > [22m[2mSecurity Rules deny-all (Firestore)[2m > [22m[2mCT-26: Autenticado não cria nem altera
+[22m[39m[2026-11-23T23:34:44.036Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x12e60e1b error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L6, false for 'update' @ L6
+
+[90mstderr[2m | tests/security/firestore-rules.test.ts[2m > [22m[2mSecurity Rules deny-all (Firestore)[2m > [22m[2mCT-27: Autenticado não apaga
+[22m[39m[2026-11-23T23:34:44.157Z]  @firebase/firestore: Firestore (13.1.0): GrpcConnection RPC 'Write' stream 0x12e60e1e error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'delete' @ L6
+
+ [32m✓[39m tests/security/firestore-rules.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1451[2mms[22m[39m
+   [32m✓[39m Security Rules deny-all (Firestore) [2m(5)[22m
+     [33m[2m✓[22m[39m CT-23: Anônimo não lê documento[33m 566[2mms[22m[39m
+ [32m✓[39m tests/contract/proof-package.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 247[2mms[22m[39m
+ [32m✓[39m tests/security/tenant-isolation.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 222[2mms[22m[39m
+ [32m✓[39m tests/contract/user-registration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 153[2mms[22m[39m
+ [32m✓[39m tests/operations.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+ [32m✓[39m tests/resilience/falhas-timeouts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m tests/contract/public-registration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 107[2mms[22m[39m
+ [32m✓[39m tests/unit/importacao-nfe.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m tests/contract/delivery-list.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m tests/nfe-key-validation.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/unit/nfe-chave.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/proof-storage.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m      Tests [22m [1m[32m169 passed[39m[22m[90m (169)[39m
+[2m   Start at [22m 20:34:38
+[2m   Duration [22m 9.20s[2m (tests 58%, import 38%, worker 3%, transform 1%)[22m
+
+[2m    Isolate [22m [33m15 workers spawned[39m[2m · ~141ms startup each (spawn + environment, per file)[22m
+[2m            [22m [2mat least ~919ms faster with [22m[33misolate: false[39m[2m — reuses workers across files instead of one per file[22m
+
+JUNIT report written to /home/marcelo-vitor/Desenvolvimento/estudos/UnB/EntregaProva/EntregaProva/docs/testes/resultados/junit.xml
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   89.04 |    88.88 |   88.79 |   91.14 |                   
+ src               |   59.75 |    71.87 |   47.36 |      60 |                   
+  app.ts           |   89.09 |    88.46 |   81.81 |   91.83 | 72-73,75-76       
+  dependencies.ts  |       0 |        0 |       0 |       0 |                   
+  seed.ts          |       0 |        0 |       0 |       0 | 12-98             
+  server.ts        |       0 |        0 |       0 |       0 | 6-17              
+ src/config        |   85.71 |    87.67 |     100 |      84 |                   
+  cors.ts          |     100 |      100 |     100 |     100 |                   
+  firebase.ts      |       0 |        0 |     100 |       0 | 4-12              
+  multer.ts        |      80 |       50 |     100 |   66.66 | 10                
+  proof-storage.ts |   81.81 |     90.9 |     100 |   81.81 | 9-10              
+  proof.ts         |     100 |      100 |     100 |     100 |                   
+  runtime.ts       |     100 |    89.36 |     100 |     100 | 10,15-16          
+ src/controllers   |   91.86 |    87.15 |   94.87 |   95.68 |                   
+  ...controller.ts |   94.69 |    91.66 |     100 |   95.28 | 48,67,103,126,146 
+  ...controller.ts |     100 |       80 |     100 |     100 | 9                 
+  ...controller.ts |     100 |      100 |     100 |     100 |                   
+  ...controller.ts |    86.2 |     80.7 |   85.71 |      94 | 27,48-49          
+  ...controller.ts |   90.27 |     87.5 |    87.5 |   96.77 | 27,79             
+ src/middlewares   |     100 |      100 |     100 |     100 |                   
+  ...middleware.ts |     100 |      100 |     100 |     100 |                   
+ src/routes        |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ src/services      |   94.36 |     91.5 |   97.36 |   97.19 |                   
+  ...st.service.ts |   88.57 |     87.8 |     100 |   88.23 | 28,51,63,67       
+  ...ge.service.ts |   95.74 |    92.96 |   95.65 |   99.14 | 142               
+  proof-storage.ts |   94.59 |    90.32 |     100 |     100 | 46-52,64          
+ src/utils         |   94.64 |    94.82 |     100 |      96 |                   
+  httpError.ts     |     100 |      100 |     100 |     100 |                   
+  ...yValidator.ts |     100 |      100 |     100 |     100 |                   
+  proofFile.ts     |     100 |      100 |     100 |     100 |                   
+  xmlParser.ts     |    90.9 |     92.5 |     100 |    93.1 | 28,49             
+-------------------|---------|----------|---------|---------|-------------------
+Global: 91.14% de linhas (566/621), mínimo 60%
+Domínio: 96.40% de linhas (321/333), mínimo 80%
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  storage: Stopping Storage Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
