@@ -34,9 +34,7 @@ describe("US-01 - importação de XML de NF-e", () => {
     expect(res.body.emitente).toBe("EMITENTE SINTETICO");
     expect(f.documents.get(path())?.emitente).toBe("EMITENTE SINTETICO");
   });
-
-  it.todo("CT-02: rejeita arquivo com extensão diferente de .xml (o backend só recebe o conteúdo, sem checar extensão)");
-
+  
   it("CT-03: aceita NF-e com versão 4.00", () => {
     expect(parseNFeXML(xml("4.00")).chave).toBe(key);
   });
