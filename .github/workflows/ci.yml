@@ -45,6 +45,8 @@ jobs:
         if: matrix.package == 'backend'
       - run: npm run test:emulator
         if: matrix.package == 'backend'
+      - run: npm test
+        if: matrix.package == 'entregaprova-app'
 
   npm-audit:
     name: ${{ matrix.package }} (npm audit)
