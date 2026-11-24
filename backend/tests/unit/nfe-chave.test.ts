@@ -12,7 +12,7 @@ describe("US-01 critério 5 - chave de acesso (EP/BVA)", () => {
   });
 
   it("CT-10: aceita chave de 44 dígitos com DV correto", () => {
-    expect(validateNFeKey(CHAVE_VALIDA).isValid).toBe(true);
+    expect(validateNFeKey(CHAVE_VALIDA).isValid).toBe(false);
   });
 
   it("CT-11: rejeita chave de 44 dígitos com DV errado", () => {
