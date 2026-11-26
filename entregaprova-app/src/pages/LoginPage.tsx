@@ -3,8 +3,10 @@ import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, sendEmailVerification, type User } from "firebase/auth";
 import { apiFetch, mensagemDoErro } from "../api/client.ts";
 import { useAuth } from "../auth/useAuth.ts";
+import Icon from "../components/Icon.tsx";
 import { auth, firebaseConfigError } from "../firebase.ts";
 import "./LoginPage.css";
+import "./LandingEnhancements.css";
 
 function mensagemDeLogin(erro: unknown): string {
   if (erro instanceof FirebaseError) {
@@ -17,9 +19,15 @@ function mensagemDeLogin(erro: unknown): string {
 }
 
 const passos = [
-  { icon: "XML", title: "Importação de NF-e", copy: "Organize os dados do documento fiscal e vincule cada entrega ao motorista responsável." },
-  { icon: "◎", title: "Captura no celular", copy: "Registre o comprovante no destino com foto, nome de quem recebeu e horário." },
-  { icon: "✓", title: "Conferência lado a lado", copy: "Compare os dados da entrega com o comprovante e registre a aprovação ou a rejeição." },
+  { icon: "document" as const, title: "Importação de NF-e", copy: "Organize os dados fiscais e vincule cada entrega ao motorista responsável." },
+  { icon: "camera" as const, title: "Captura no celular", copy: "Registre a foto, quem recebeu e o horário no destino da entrega." },
+  { icon: "review" as const, title: "Conferência lado a lado", copy: "Compare o documento com o comprovante e registre a aprovação ou a rejeição." },
+];
+
+const paradasDaRota = [
+  { numero: "CD", titulo: "Centro de distribuição", cidade: "Campinas · SP", estado: "Saída" },
+  { numero: "01", titulo: "Entrega regional", cidade: "Jundiaí · SP", estado: "Parada" },
+  { numero: "02", titulo: "Destino final", cidade: "São Paulo · SP", estado: "Destino" },
 ];
 
 export default function LoginPage({ user }: { user: User | null }) {
@@ -95,14 +103,16 @@ function LandingPage() {
           <a className="lp-brand" href="#inicio" aria-label="EntregaProva — início">
             <img src="/logo-entregaprova.png" alt="EntregaProva" />
           </a>
-          <nav className={`lp-navlinks${menuAberto ? " is-open" : ""}`} aria-label="Navegação principal">
-            <a href="#recursos" onClick={() => setMenuAberto(false)}>Recursos</a>
+          <nav id="lp-main-navigation" className={`lp-navlinks${menuAberto ? " is-open" : ""}`} aria-label="Navegação principal">
+            <a href="#jornadas" onClick={() => setMenuAberto(false)}>Jornadas</a>
             <a href="#como-funciona" onClick={() => setMenuAberto(false)}>Como funciona</a>
-            <a href="#beneficios" onClick={() => setMenuAberto(false)}>Benefícios</a>
+            <a href="#para-quem" onClick={() => setMenuAberto(false)}>Para quem</a>
           </nav>
           <div className="lp-navactions">
-            <button className="lp-button lp-primary lp-open-login" type="button" onClick={abrirLogin}>Acessar minha conta <span aria-hidden="true">→</span></button>
-            <button className="lp-mobilemenu" type="button" aria-label={menuAberto ? "Fechar menu" : "Abrir menu"} aria-expanded={menuAberto} onClick={() => setMenuAberto((open) => !open)}>{menuAberto ? "×" : "☰"}</button>
+            <button className="lp-button lp-primary lp-open-login" type="button" onClick={abrirLogin}>Acessar plataforma</button>
+            <button className="lp-mobilemenu" type="button" aria-label={menuAberto ? "Fechar menu" : "Abrir menu"} aria-expanded={menuAberto} aria-controls="lp-main-navigation" onClick={() => setMenuAberto((open) => !open)}>
+              <span aria-hidden="true">{menuAberto ? "×" : "☰"}</span>
+            </button>
           </div>
         </div>
       </header>
@@ -115,44 +125,57 @@ function LandingPage() {
               <h1>Da nota fiscal à entrega <span>comprovada.</span></h1>
               <p className="lp-herotext">Acompanhe documentos, registros de entrega e conferências em um só fluxo. Mais clareza para quem organiza as rotas e para quem está na rua.</p>
               <div className="lp-herobuttons">
-                <button className="lp-button lp-primary" type="button" onClick={abrirLogin}>Entrar na plataforma <span aria-hidden="true">→</span></button>
-                <a className="lp-button lp-secondary" href="#como-funciona">Conheça o fluxo</a>
+                <a className="lp-textlink" href="#como-funciona">Conheça o fluxo <Icon name="arrow" size={18} /></a>
               </div>
-              <div className="lp-trust"><span aria-hidden="true">✓</span> Um processo simples para cada etapa da entrega.</div>
+              <div className="lp-trust"><Icon name="check" size={17} /> Um processo claro em cada etapa da entrega.</div>
             </div>
 
-            <div className="lp-herovisual" aria-label="Ilustração demonstrativa de acompanhamento de entrega">
+            <div className="lp-herovisual" aria-label="Demonstração esquemática de uma rota regional de entregas">
               <div className="lp-herohalo" />
               <article className="lp-dashboard">
-                <div className="lp-dashtop"><div className="lp-dashbrand"><img src="/logo-entregaprova.png" alt="" /> Visão da operação</div><span className="lp-dashstatus"><i /> Em andamento</span></div>
+                <div className="lp-dashtop"><div className="lp-dashbrand"><span className="lp-route-icon"><Icon name="route" size={18} /></span> Rota de distribuição</div><span className="lp-dashstatus"><i /> Exemplo</span></div>
                 <div className="lp-dashbody">
-                  <div className="lp-dashtitle"><div><small>ACOMPANHAMENTO DE ENTREGA</small><h2>Rota do dia</h2></div><span>Exemplo visual</span></div>
+                  <div className="lp-dashtitle"><div><small>OPERAÇÃO REGIONAL · SP</small><h2>Campinas <span>→</span> São Paulo</h2></div><span className="lp-demo-tag">Demonstração</span></div>
                   <div className="lp-routemap" aria-hidden="true">
-                    <svg viewBox="0 0 560 190" preserveAspectRatio="none"><path className="lp-street" d="M-20 150 C60 126 70 25 170 57 S294 168 360 108 460 30 580 51" /><path className="lp-street" d="M-5 24 C100 39 100 105 208 117 S337 17 411 60 502 144 575 119" /><path className="lp-route" d="M65 126 C135 126 144 64 247 68 S333 133 422 81 476 48 520 48" /></svg>
-                    <span className="lp-pin lp-pin-one">1</span><span className="lp-pin lp-pin-two">2</span><span className="lp-pin lp-pin-three">3</span>
-                    <span className="lp-maplabel">Origem · Campinas</span><span className="lp-maplabel lp-maplabel-end">Destino · Ribeirão Preto</span>
+                    <svg viewBox="0 0 560 190" preserveAspectRatio="none">
+                      <path className="lp-street" d="M-20 150 C60 126 70 25 170 57 S294 168 360 108 460 30 580 51" />
+                      <path className="lp-street" d="M-5 24 C100 39 100 105 208 117 S337 17 411 60 502 144 575 119" />
+                      <path className="lp-street" d="M20 188 C90 142 184 154 242 117 S310 17 390 25 485 170 550 158" />
+                      <path className="lp-route" d="M52 129 C115 128 142 84 205 85 S295 130 354 104 422 60 502 57" />
+                    </svg>
+                    <span className="lp-pin lp-pin-one"><Icon name="warehouse" size={14} /></span>
+                    <span className="lp-pin lp-pin-two">01</span>
+                    <span className="lp-pin lp-pin-three">02</span>
+                    <span className="lp-maplabel">Campinas</span><span className="lp-maplabel lp-maplabel-mid">Jundiaí</span><span className="lp-maplabel lp-maplabel-end">São Paulo</span>
                   </div>
-                  <div className="lp-dashstats"><div><small>DOCUMENTO</small><b>NF-e vinculada</b></div><div><small>COMPROVANTE</small><b>Registro digital</b></div><div><small>PRÓXIMA ETAPA</small><b>Conferência</b></div></div>
+                  <ol className="lp-stoplist" aria-label="Etapas demonstrativas da rota">
+                    {paradasDaRota.map((parada, index) => (
+                      <li className={index === 1 ? "is-current" : ""} key={parada.numero}>
+                        <span className="lp-stop-marker">{index === 0 ? <Icon name="warehouse" size={15} /> : parada.numero}</span>
+                        <span className="lp-stop-copy"><b>{parada.titulo}</b><small>{parada.cidade}</small></span>
+                        <span className="lp-stop-type">{parada.estado}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-                <div className="lp-dashbottom"><span><b>Fluxo</b> Importação → entrega → revisão</span><span className="lp-progress"><i /></span></div>
+                <div className="lp-dashbottom"><span>Visualização esquemática · sem rastreamento ao vivo</span><span className="lp-progress"><i /></span></div>
               </article>
-              <div className="lp-floatcard"><span aria-hidden="true">✓</span><div><b>Comprovante registrado</b><small>Pronto para conferência</small></div></div>
             </div>
           </div>
         </section>
 
         <section className="lp-proofbar" id="beneficios" aria-label="Benefícios">
           <div className="lp-wrap lp-proofinner">
-            <div className="lp-proof"><span aria-hidden="true">▤</span><div><b>Documentos organizados</b><small>Dados da NF-e em um só lugar</small></div></div>
-            <div className="lp-proof"><span aria-hidden="true">◎</span><div><b>Registro na entrega</b><small>Foto, recebedor e horário</small></div></div>
-            <div className="lp-proof"><span aria-hidden="true">✓</span><div><b>Conferência clara</b><small>Documento e comprovante lado a lado</small></div></div>
+            <div className="lp-proof"><span aria-hidden="true"><Icon name="document" /></span><div><b>Documentos organizados</b><small>Dados da NF-e em um só lugar</small></div></div>
+            <div className="lp-proof"><span aria-hidden="true"><Icon name="camera" /></span><div><b>Registro na entrega</b><small>Foto, recebedor e horário</small></div></div>
+            <div className="lp-proof"><span aria-hidden="true"><Icon name="review" /></span><div><b>Conferência clara</b><small>Documento e comprovante lado a lado</small></div></div>
           </div>
         </section>
 
-        <section className="lp-block" id="recursos">
+        <section className="lp-block" id="jornadas">
           <div className="lp-wrap">
             <header className="lp-sectionhead"><p className="lp-eyebrow">UM FLUXO, TRÊS ETAPAS</p><h2>O que acontece entre a nota e a confirmação?</h2><p>As informações acompanham a entrega do início à conferência, com cada etapa visível para a equipe.</p></header>
-            <div className="lp-features">{passos.map((passo) => <article className="lp-feature" key={passo.title}><span aria-hidden="true">{passo.icon}</span><h3>{passo.title}</h3><p>{passo.copy}</p></article>)}</div>
+            <div className="lp-features">{passos.map((passo, index) => <article className="lp-feature" key={passo.title}><span className="lp-feature-icon" aria-hidden="true"><Icon name={passo.icon} size={22} /></span><small className="lp-feature-step">ETAPA 0{index + 1}</small><h3>{passo.title}</h3><p>{passo.copy}</p></article>)}</div>
           </div>
         </section>
 
@@ -163,10 +186,19 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="lp-cta"><div className="lp-wrap"><div className="lp-ctapanel"><div><h2>Pronto para acompanhar suas entregas?</h2><p>Acesse sua conta para continuar na plataforma EntregaProva.</p></div><button className="lp-button" type="button" onClick={abrirLogin}>Acessar minha conta <span aria-hidden="true">→</span></button></div></div></section>
+        <section className="lp-block lp-audience" id="para-quem">
+          <div className="lp-wrap">
+            <header className="lp-sectionhead"><p className="lp-eyebrow">UMA OPERAÇÃO CONECTADA</p><h2>Informação certa para cada pessoa</h2><p>O mesmo processo dá visibilidade ao escritório, ao motorista e a quem confere o comprovante.</p></header>
+            <div className="lp-audience-grid">
+              <article><span><Icon name="warehouse" size={22} /></span><div><h3>Operação</h3><p>Importe NF-e, atribua entregas e acompanhe os comprovantes recebidos.</p></div></article>
+              <article><span><Icon name="route" size={22} /></span><div><h3>Motorista</h3><p>Encontre a entrega, registre a foto e informe quem recebeu no destino.</p></div></article>
+              <article><span><Icon name="review" size={22} /></span><div><h3>Conferência</h3><p>Compare os dados fiscais com a evidência e registre a decisão.</p></div></article>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer className="lp-footer"><div className="lp-wrap lp-footerinner"><img src="/logo-entregaprova.png" alt="EntregaProva" /><span>© 2026 EntregaProva · Prévia da plataforma de entregas</span></div></footer>
+      <footer className="lp-footer"><div className="lp-wrap lp-footerinner"><img src="/logo-entregaprova.png" alt="EntregaProva" /><span>© 2026 EntregaProva · Controle de entregas e comprovantes</span><a href="#inicio">Voltar ao início</a></div></footer>
 
       <div className={`lp-modalbackdrop${loginAberto ? " is-open" : ""}`} aria-hidden={!loginAberto} onMouseDown={(event) => { if (event.target === event.currentTarget) fecharLogin(); }}>
         <section className="lp-modal" role="dialog" aria-modal="true" aria-labelledby="lp-login-title">
