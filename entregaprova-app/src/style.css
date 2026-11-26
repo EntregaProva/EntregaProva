@@ -51,3 +51,95 @@ th{color:#536174}
 .danger-status{color:#A61B1B}
 .success{color:#12623F}
 .nav-item:hover,.nav-item.active{color:#075DBA}
+
+/* Login: portal de operação com uma prévia interativa da jornada de frete. */
+.login-experience{min-height:100vh;display:grid;grid-template-columns:minmax(390px,.88fr) minmax(540px,1.12fr);gap:14px;padding:14px;background:#F1F5FA;color:#1F2E43}
+.login-side{min-height:calc(100vh - 28px);display:flex;flex-direction:column;padding:24px clamp(28px,4vw,68px) 18px;background:#fff;border:1px solid #E3EAF2;border-radius:18px}
+.login-brandline{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.login-brandline .login-logo{width:166px;margin:0;object-fit:contain}
+.login-secure{display:flex;align-items:center;gap:7px;color:#42617E;font-size:12px;font-weight:600;white-space:nowrap}
+.login-secure span{color:#168153;font-size:9px}
+.login-content{width:min(440px,100%);margin:auto;padding:48px 0 42px}
+.login-eyebrow{margin:0 0 12px;color:#075DBA;font-size:12px;font-weight:700;letter-spacing:1.35px}
+.login-content>h1{max-width:430px;margin:0;color:#102A56;font-size:clamp(30px,3.2vw,42px);line-height:1.13;letter-spacing:-1.5px}
+.login-intro{max-width:405px;margin:14px 0 30px;color:#536174;font-size:15px;line-height:1.65}
+.login-form{padding:22px 22px 18px;border:1px solid #E3EAF2;border-radius:14px;background:#fff;box-shadow:0 12px 35px #16365A0A}
+.login-form-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:17px}
+.login-form-heading h2{margin:0 0 4px;color:#102A56;font-size:18px}
+.login-form-heading p{margin:0;color:#607086;font-size:13px}
+.login-step-badge{padding:6px 9px;border-radius:7px;background:#EEF5FD;color:#075DBA;font-size:11px;font-weight:700;white-space:nowrap}
+.login-step-badge i,.journey-count i{font-style:normal;color:#708197;font-weight:500}
+.login-form label{display:block;margin:15px 0 7px;color:#33445B;font-size:14px;font-weight:600}
+.login-input-wrap{position:relative;display:flex;align-items:center}
+.login-input-wrap input{width:100%;min-height:48px;padding:11px 82px 11px 42px;border:1px solid #C9D4E1;border-radius:9px;background:#fff;color:#1F2E43;font-size:14px;outline:none;transition:border-color .18s,box-shadow .18s}
+.login-input-wrap input::placeholder{color:#748397}
+.login-input-wrap input:focus{border-color:#075DBA;box-shadow:0 0 0 3px #075DBA1A}
+.login-input-icon{position:absolute;left:13px;color:#61758E;font-size:17px;pointer-events:none}
+.login-lock-icon{font-size:15px}
+.login-password-toggle{position:absolute;right:9px;padding:7px 8px;border:0;border-radius:6px;background:transparent;color:#075DBA;font-size:12px;font-weight:700}
+.login-password-toggle:hover{background:#EEF5FD}
+.login-submit{width:100%;min-height:48px;margin-top:20px;padding:11px 15px;font-size:14px}
+.login-submit span{margin-left:auto;font-size:19px;line-height:12px}
+.login-access-note{margin:14px 0 0;color:#5B6A7E;font-size:12px;line-height:1.5;text-align:center}
+.login-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;color:#596A80;font-size:11px}
+.login-footer span:last-child{display:flex;align-items:center;gap:7px}
+.login-footer i{width:7px;height:7px;border-radius:50%;background:#168153}
+.login-visual{position:relative;isolation:isolate;display:flex;flex-direction:column;min-height:calc(100vh - 28px);overflow:hidden;padding:34px clamp(24px,4vw,64px) 21px;border-radius:18px;background:radial-gradient(ellipse at 82% 12%,#1D4C7E 0,transparent 34%),linear-gradient(145deg,#0E294B 0%,#0B1B32 70%,#09182C 100%);color:#fff}
+.login-visual:before{position:absolute;z-index:-1;inset:0;background-image:linear-gradient(#B8D2F00C 1px,transparent 1px),linear-gradient(90deg,#B8D2F00C 1px,transparent 1px);background-size:42px 42px;content:"";mask-image:linear-gradient(180deg,#000 0%,transparent 88%)}
+.visual-orbit{position:absolute;z-index:-1;width:470px;height:470px;border:1px solid #BDD8F015;border-radius:50%;pointer-events:none}
+.visual-orbit-one{top:-290px;right:-100px}.visual-orbit-two{top:-225px;right:-38px;width:350px;height:350px}
+.visual-topline{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.visual-kicker{display:flex;align-items:center;gap:9px;color:#D6E7FA;font-size:11px;font-weight:700;letter-spacing:1.25px}
+.visual-kicker span{width:8px;height:8px;border-radius:50%;background:#56D6A0;box-shadow:0 0 0 5px #56D6A01C}
+.visual-demo-label{padding:7px 9px;border:1px solid #B5CFE52B;border-radius:6px;color:#C5D7EA;font-size:10px;font-weight:700;letter-spacing:.7px}
+.visual-main{width:min(680px,100%);margin:auto; padding:30px 0}
+.visual-copy{margin:0 0 23px}
+.visual-copy p{margin:0 0 9px;color:#8EB9E8;font-size:11px;font-weight:700;letter-spacing:1.4px}
+.visual-copy h2{margin:0;color:#fff;font-size:clamp(27px,3vw,37px);line-height:1.13;letter-spacing:-.8px}
+.shipment-card{overflow:hidden;border:1px solid #DCE8F126;border-radius:15px;background:#F9FBFE;color:#20334B;box-shadow:0 24px 80px #020C1B55}
+.shipment-card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px 14px}
+.shipment-overline{color:#687A90;font-size:10px;font-weight:700;letter-spacing:1px}
+.shipment-card-head h3{margin:5px 0 0;color:#102A56;font-size:17px}
+.shipment-card-head h3 b{color:#075DBA}
+.shipment-status{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:7px;background:#E8F7EF;color:#176440;font-size:11px;font-weight:700;white-space:nowrap}
+.shipment-status i{width:7px;height:7px;border-radius:50%;background:#1E9A63}
+.route-visual{position:relative;height:180px;overflow:hidden;background:radial-gradient(ellipse at 55% 46%,#ECF3FA 0%,#F6F9FC 65%)}
+.route-map-lines{position:absolute;inset:0;width:100%;height:100%}
+.map-road{fill:none;stroke-linecap:round}.map-road-faint{stroke:#CCD9E6;stroke-width:1.1;stroke-dasharray:3 7}.map-route-base{fill:none;stroke:#C7D7E8;stroke-width:4;stroke-linecap:round;stroke-dasharray:6 8}.map-route-progress{fill:none;stroke:#0878F9;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+.route-stop{position:absolute;z-index:2;display:grid;width:30px;height:30px;place-items:center;border:3px solid #fff;border-radius:50%;background:#D7E2ED;color:#58708B;box-shadow:0 2px 8px #102A5625;font-size:8px;font-weight:800;transition:all .25s ease}
+.route-stop-start{top:62%;left:10%}.route-stop-current{top:27%;left:45%;width:38px;height:38px;border-color:#fff;background:#075DBA;color:#fff;box-shadow:0 0 0 6px #075DBA20,0 4px 12px #102A5640;font-size:12px;animation:route-pulse 2.4s ease-in-out infinite}.route-stop-current.stage-0{top:61%;left:10%}.route-stop-current.stage-1{top:27%;left:45%}.route-stop-current.stage-2{top:37%;left:82%}.route-stop-end{top:37%;left:82%}.route-stop.visited{background:#178754;color:#fff}
+.route-city{position:absolute;z-index:1;display:grid;gap:2px}.route-city b{color:#183451;font-size:11px}.route-city small{color:#708197;font-size:10px}.route-city-origin{top:80%;left:5%}.route-city-destination{top:57%;right:4%;text-align:right}
+.route-label{position:absolute;top:7%;left:50%;padding:5px 8px;border:1px solid #D9E4EF;border-radius:5px;background:#fff;color:#5F7187;font-size:9px;font-weight:700;letter-spacing:.6px;transform:translateX(-50%);white-space:nowrap}.route-label span{color:#0878F9}
+.shipment-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:13px 20px;border-top:1px solid #E7EDF3;border-bottom:1px solid #E7EDF3}
+.shipment-meta div{display:grid;gap:5px;min-width:0}.shipment-meta span{color:#6C7D91;font-size:9px;font-weight:700;letter-spacing:.75px}.shipment-meta b{overflow:hidden;color:#273C55;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.journey-control{padding:15px 20px 17px}
+.journey-control-head{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#102A56;font-size:13px;font-weight:700}
+.journey-control-head>div{display:flex;align-items:center;gap:9px}.journey-number{display:grid;width:25px;height:25px;place-items:center;border-radius:7px;background:#E8F1FC;color:#075DBA;font-size:10px}.journey-count{color:#52677F;font-size:10px}
+.journey-control>p{min-height:38px;margin:8px 0 13px;color:#5D6F84;font-size:12px;line-height:1.55}
+.journey-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.journey-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:7px;border:1px solid #DCE5EF;border-radius:7px;background:#fff;color:#51647A;font-size:10px;font-weight:600;transition:all .18s ease}
+.journey-tabs button span{display:grid;width:23px;height:21px;place-items:center;border-radius:5px;background:#EDF2F7;color:#58708B;font-size:8px;font-weight:800}
+.journey-tabs button:hover{border-color:#8AB7EA;background:#F5F9FE}.journey-tabs button.active{border-color:#75A8E0;background:#EEF5FD;color:#075DBA;box-shadow:inset 0 0 0 1px #075DBA12}.journey-tabs button.active span{background:#075DBA;color:#fff}
+.visual-disclaimer{margin:0;color:#C3D1E0;font-size:11px;text-align:center}
+@keyframes route-pulse{0%,100%{box-shadow:0 0 0 5px #075DBA18,0 4px 12px #102A5640}50%{box-shadow:0 0 0 9px #075DBA0D,0 4px 12px #102A5640}}
+@media(max-width:1000px){.login-experience{grid-template-columns:minmax(340px,.85fr) minmax(460px,1.15fr)}.login-side{padding-right:30px;padding-left:30px}.login-visual{padding-right:25px;padding-left:25px}.visual-main{padding:22px 0}.route-visual{height:165px}}
+@media(max-width:820px){.login-experience{grid-template-columns:1fr;padding:10px}.login-side{min-height:auto;padding:23px clamp(22px,7vw,60px) 18px}.login-content{margin:0 auto;padding:48px 0 38px}.login-visual{min-height:620px;padding:28px clamp(20px,6vw,55px) 18px}.visual-main{width:min(640px,100%);padding:38px 0}.login-footer{margin-top:auto}}
+@media(max-width:520px){.login-experience{gap:10px;padding:7px}.login-side{padding:17px 17px 15px;border-radius:13px}.login-brandline .login-logo{width:145px}.login-secure{font-size:11px}.login-content{padding:40px 0 28px}.login-content>h1{font-size:32px}.login-intro{margin:11px 0 22px;font-size:14px}.login-form{padding:17px 15px 15px}.login-form-heading h2{font-size:17px}.login-form-heading p{font-size:12px}.login-visual{min-height:590px;padding:21px 14px 15px;border-radius:13px}.visual-topline{align-items:flex-start}.visual-kicker{font-size:10px}.visual-demo-label{font-size:9px}.visual-main{padding:31px 0}.visual-copy h2{font-size:29px}.shipment-card-head{padding:14px 13px 12px}.shipment-card-head h3{font-size:15px}.shipment-status{font-size:10px}.route-visual{height:155px}.route-city b{font-size:10px}.shipment-meta{gap:7px;padding:12px 13px}.shipment-meta span{font-size:8px}.shipment-meta b{font-size:10px}.journey-control{padding:13px}.journey-tabs{gap:5px}.journey-tabs button{gap:4px;padding:6px 3px;font-size:9px}.journey-tabs button span{width:19px}.login-footer{font-size:10px}.login-footer span:last-child{max-width:55%;text-align:right}}
+@media(prefers-reduced-motion:reduce){.route-stop-current{animation:none}.map-route-progress,.route-stop,.journey-tabs button{transition:none}}
+
+/* Marca EntregaProva no acesso: Poppins, navy e azul do produto. */
+.login-experience,.login-experience *{font-family:'Poppins',sans-serif}
+.login-experience{background:#F4F7FB}
+.login-side{border-color:#E1E8F0}
+.login-brandline .login-logo{width:min(210px,100%);margin:0;object-fit:contain}
+.login-content{width:min(410px,100%)}
+.login-content>h1{font-size:32px;letter-spacing:-.7px}
+.login-intro{margin:12px 0 25px;font-size:14px;line-height:1.65}
+.login-form{border-color:#E1E8F0;box-shadow:0 5px 20px #102A560A}
+.login-form label{color:#243247}
+.login-input-wrap input{border-color:#C8D4E2}
+.login-input-wrap input:focus{border-color:#075DBA;box-shadow:0 0 0 3px #075DBA1A}
+.login-visual{background:radial-gradient(ellipse at 82% 12%,#1D4C7E 0,transparent 34%),linear-gradient(145deg,#102A56 0%,#102A56 68%,#0B2144 100%)}
+.visual-copy p{color:#A9CBF1}
+.journey-tabs button.active{border-color:#78A9DF;background:#EAF3FF;color:#075DBA}
+@media(max-width:520px){.login-content>h1{font-size:30px}.login-brandline .login-logo{width:min(182px,65vw)}}

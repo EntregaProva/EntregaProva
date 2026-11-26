@@ -8,19 +8,21 @@ import CapturePage from "./pages/CapturePage.tsx";
 import DeliveriesPage from "./pages/DeliveriesPage.tsx";
 import ImportXmlPage from "./pages/ImportXmlPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
+import OverviewPage from "./pages/OverviewPage.tsx";
 import RegisterUserPage from "./pages/RegisterUserPage.tsx";
 import ReviewPage from "./pages/ReviewPage.tsx";
 import type { View } from "./views.ts";
+import "./components/AppShell.css";
 
 const VIEWS_BY_ROLE: Record<"admin" | "operator" | "driver", View[]> = {
-  admin: ["entregas", "importar", "capturar", "conferir", "usuarios"],
-  operator: ["entregas", "importar", "conferir"],
-  driver: ["entregas", "capturar"],
+  admin: ["visao", "entregas", "importar", "capturar", "conferir", "usuarios"],
+  operator: ["visao", "entregas", "importar", "conferir"],
+  driver: ["visao", "entregas", "capturar"],
 };
 
 function Shell() {
   const { user, role, authIssue, loading, signOut } = useAuth();
-  const [view, setView] = useState<View>("entregas");
+  const [view, setView] = useState<View>("visao");
   const allowedViews = useMemo(() => role ? VIEWS_BY_ROLE[role] : [], [role]);
 
   useEffect(() => {
@@ -56,6 +58,7 @@ function Shell() {
       <Sidebar view={view} role={role} onNavigate={navigate} />
       <main className="main">
         <TopBar view={view} />
+        {view === "visao" && <OverviewPage onNavigate={navigate} />}
         {view === "entregas" && <DeliveriesPage onNavigate={navigate} />}
         {view === "importar" && role !== "driver" && <ImportXmlPage onNavigate={navigate} />}
         {view === "capturar" && (role === "driver" || role === "admin") && <CapturePage onNavigate={navigate} />}
