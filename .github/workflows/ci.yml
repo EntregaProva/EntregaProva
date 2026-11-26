@@ -41,6 +41,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm run test
+        if: matrix.package == 'entregaprova-app'
       - run: npm run test:smoke
         if: matrix.package == 'backend'
       - run: npm run test:emulator
@@ -63,7 +65,10 @@ jobs:
         with:
           node-version: 22
 
+      - run: npm audit --audit-level=high
+        if: matrix.package == 'entregaprova-app'
       - run: npm audit --omit=dev --audit-level=high
+        if: matrix.package == 'backend'
 
   gitleaks:
     name: gitleaks
