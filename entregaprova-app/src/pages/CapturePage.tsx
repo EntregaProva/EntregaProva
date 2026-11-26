@@ -156,7 +156,7 @@ export default function CapturePage({ onNavigate }: { onNavigate: (view: View) =
 
           <label htmlFor="foto">Foto do comprovante</label>
           <input id="foto" type="file" accept="image/jpeg,image/png" capture="environment" onChange={(event) => void handleFoto(event)} disabled={enviando || preparandoFoto} aria-describedby="foto-dica" />
-          <p id="foto-dica" className="hint">JPG ou PNG, até {MAX_PHOTO_MB} MB antes da compressão. A imagem é reduzida no navegador para até 1280 px e aproximadamente 300 KB. No celular, abre a câmera traseira.</p>
+          <p id="foto-dica" className="hint">JPG ou PNG, até {MAX_PHOTO_MB} MB antes da compressão. A imagem é reduzida no navegador para no máximo 1280 px e 300.000 bytes (300 KB). No celular, abre a câmera traseira.</p>
           {preparandoFoto && <StateMessage kind="loading" message="Preparando e comprimindo a foto..." />}
           {preview && <img src={preview} alt="Pré-visualização do comprovante comprimido" className="proof-preview" />}
 

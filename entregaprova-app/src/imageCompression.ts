@@ -1,5 +1,5 @@
 const MAX_EDGE = 1280;
-const MAX_BYTES = 300 * 1024;
+const MAX_BYTES = 300_000;
 
 function canvasBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -10,7 +10,7 @@ function canvasBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   });
 }
 
-/** Redimensiona no navegador e produz JPEG com até 300 KB. */
+/** Redimensiona no navegador e produz JPEG com até 300.000 bytes. */
 export async function compressProofPhoto(file: File): Promise<File> {
   const bitmap = await createImageBitmap(file);
   try {
@@ -38,5 +38,5 @@ export async function compressProofPhoto(file: File): Promise<File> {
   } finally {
     bitmap.close();
   }
-  throw new Error("Não foi possível reduzir a foto para até 300 KB. Tire uma nova foto com menos detalhes.");
+  throw new Error("Não foi possível reduzir a foto para até 300.000 bytes. Tire uma nova foto com menos detalhes.");
 }
